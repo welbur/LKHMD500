@@ -16,6 +16,8 @@
   */
 #include "MSP_SPI.h"
 
+/* transfer state */
+__IO uint32_t sTxRxFlag;
 //uint32_t wTransferState = TRANSFER_WAIT;
 //#include "spi.h"
 
@@ -40,7 +42,7 @@ uint8_t SPI2_ReadWriteByte(uint8_t TxData)
     uint8_t Rxdata[5];
     HAL_SPI_Receive(&hspi2, Rxdata, 5, 1000); 
     printf("spi2 read data : %d, %d, %d, %d, %d\r\n", Rxdata[0], Rxdata[1], Rxdata[2], Rxdata[3], Rxdata[4]);      
- 	return Rxdata;          		    //�����յ�������		
+ 	return Rxdata[0];          		    //�����յ�������		
 }
 
 SPI_HandleTypeDef hspi1;
@@ -167,52 +169,110 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
   }
 }
 
-/**
-  * @brief  Master Synchronization with Slave.
-  * @param  None
-  * @retval None
-  */
-#if 0
-void Master_Synchro(SPI_HandleTypeDef hspi)
+void SPITransfer_Init(void) 
 {
-  uint8_t txackbytes = SPI_MASTER_SYNBYTE, rxackbytes = 0x00;
-  //do
-  //{
-  //printf("cs pin : %d\r\n", HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_4));
-  for (int i =0; i<10; i++) {
-    //printf("spi master synchro \r\n");
-    /* Call SPI write function to send command to slave */
-    if(HAL_SPI_TransmitReceive_IT(&hspi, (uint8_t *)&txackbytes, (uint8_t *)&rxackbytes, 1) != HAL_OK)
-    {
-      //printf("spi master synchro error\r\n");
-      //Error_Handler();
-    }
-    //while(HAL_SPI_GetState(&hspi) != HAL_SPI_STATE_READY)
-    //{}
-    //printf("receive spi data : %d\r\n", rxackbytes);
-  }
-  //}while(rxackbytes != SPI_SLAVE_SYNBYTE);
-  printf("end spi synchro\r\n");
+/*******************************************       先初始化需要用到的GPIO引脚      *************************************/
+    GPIO_InitTypeDef GPIO_InitStruct = {0};
+    /*Configure GPIO pins : PB0 PB1 PB2 PB3 PB4 PB5 PB6 PB7 
+     *        PB0~PB7定义为spi1 cs的引脚
+    */
+    SPI1_DIB1_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_DIB1_CS;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(SPI1_DIB1_CS_Port, &GPIO_InitStruct);
+    SPI1_DIB2_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_DIB2_CS;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(SPI1_DIB2_CS_Port, &GPIO_InitStruct);
+    SPI1_DIB3_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_DIB3_CS;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(SPI1_DIB3_CS_Port, &GPIO_InitStruct);
+    SPI1_DIB4_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_DIB4_CS;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(SPI1_DIB4_CS_Port, &GPIO_InitStruct);
+    SPI1_DQB1_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_DQB1_CS;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(SPI1_DQB1_CS_Port, &GPIO_InitStruct);
+    SPI1_DQB2_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_DQB2_CS;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(SPI1_DQB2_CS_Port, &GPIO_InitStruct);
+    SPI1_RS485B_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_RS485B_CS;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(SPI1_RS485B_CS_Port, &GPIO_InitStruct);
+    SPI1_MENUB_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_MENUB_CS;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(SPI1_MENUB_CS_Port, &GPIO_InitStruct);
+/*******************************************       将所有cs引脚都默认设为高电平     *************************************/
+    HAL_GPIO_WritePin(SPI1_DIB1_CS_Port,SPI1_DIB1_CS,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_DIB2_CS_Port,SPI1_DIB2_CS,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_DIB3_CS_Port,SPI1_DIB3_CS,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_DIB4_CS_Port,SPI1_DIB4_CS,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_DQB1_CS_Port,SPI1_DQB1_CS,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_DQB2_CS_Port,SPI1_DQB2_CS,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_RS485B_CS_Port,SPI1_RS485B_CS,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_MENUB_CS_Port,SPI1_MENUB_CS,GPIO_PIN_SET);
 }
 
 /**
-  * @brief  Slave synchronization with Master
-  * @param  None
-  * @retval None
+  * @brief  MSP_SPI_write
+  * @param  spiHandle: 指向哪个spi号
+  * @param  cs: 指向Slave板的cs引脚
+  * @param  txData: 指向需要发送数据的指针
+  * @param  txLen: 需要发送数据的长度
+  * @note   Master板 通过spi1发送数据给Slave板.
+  * @retval 发送成功 返回 1； 发送失败 返回 0
   */
-void Slave_Synchro(SPI_HandleTypeDef hspi)
+uint8_t MSP_SPI_write(SPI_HandleTypeDef* spiHandle, uint8_t cs, uint8_t *txData, uint16_t txLen)
 {
-  uint8_t txackbyte = SPI_SLAVE_SYNBYTE, rxackbyte = 0x00;
-
-  do
+  for (uint16_t i = 0; i < txLen; i++)
   {
-    if (HAL_SPI_TransmitReceive(&hspi, (uint8_t *)&txackbyte, (uint8_t *)&rxackbyte, 1, HAL_MAX_DELAY) != HAL_OK)
+    uint32_t msTickstart = HAL_GetTick();
+    SPI1_CS_ENABLE(cs);     //将当前触发的板子的cs信号使能
+    if(HAL_SPI_Transmit_IT(spiHandle, (txData+i), 1) != HAL_OK) return 0;
+    while(sTxRxFlag != SpiTx_COMPLETE) 
     {
-      printf("spi slave synchro error");
-      //Error_Handler();
+      //if ((HAL_GetTick() - msTickstart) > sTxRx_TimeOut) return 0;
+      if ((HAL_GetTick() - msTickstart) > sTxRx_TimeOut) {printf("spi tx timeout....\r\n"); return 0;}
     }
+    SPI1_CS_DISABLE(cs);    //关闭当前触发的板子的cs信号
+    sTxRxFlag = SpiTxRx_WAIT;
   }
-  while (rxackbyte != SPI_MASTER_SYNBYTE);
+  return 1;
+}
+
+/**
+  * @brief  MSP_SPI_read
+  * @param  spiHandle: 指向哪个spi号
+  * @param  cs: 指向Slave板的cs引脚
+  * @param  rxData: 指向需要发送数据的指针
+  * @param  rxLen: 需要发送数据的长度
+  * @note   通过spi号接收指定数量的数据.
+  * @retval 发送成功 返回 1； 发送失败 返回 0
+  */
+uint8_t MSP_SPI_read(SPI_HandleTypeDef* spiHandle, uint8_t cs, uint8_t *rxData, uint16_t rxLen)
+{
+  for (uint16_t i = 0; i < rxLen; i++)
+  {
+    SPI1_CS_ENABLE(cs);     //将当前触发的板子的cs信号使能
+    if(HAL_SPI_Receive(spiHandle, (rxData+i), 1, 10) != HAL_OK) return 0;
+    while(HAL_SPI_GetState(spiHandle) != HAL_SPI_STATE_READY) {}
+    SPI1_CS_DISABLE(cs);    //关闭当前触发的板子的cs信号
+  }
+  return 1;
 }
 
 /**
@@ -222,24 +282,15 @@ void Slave_Synchro(SPI_HandleTypeDef hspi)
   *         you can add your own implementation. 
   * @retval None
   */
-int sledr_v = 1;
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  uint8_t sRxBuffer[5];
-  /* Turn LED on: Transfer in transmission process is correct */
   printf("spi rx callback\r\n");
-  sledr_v = 1 - sledr_v;
-  LED_R(sledr_v);
-
-  /* Turn LED on: Transfer in reception process is correct */
-  wTransferState = TRANSFER_COMPLETE;
+  sTxRxFlag = SpiRx_COMPLETE;
 }
-void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  /* Turn LED on: Transfer in transmission process is correct */
-  printf("spi txrx callback\r\n");
-  /* Turn LED on: Transfer in reception process is correct */
-  wTransferState = TRANSFER_COMPLETE;
+  //printf("spi tx callback\r\n");
+  sTxRxFlag = SpiTx_COMPLETE;
 }
 
 /**
@@ -252,137 +303,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
 {
   printf("spi error callback\r\n");
-  wTransferState = TRANSFER_ERROR;
-  //HAL_SPI_MspDeInit(&hspi2);
-  SPI2_Reset();
-  HAL_SPI_MspInit(&hspi2);
+  sTxRxFlag = SpiTxRx_ERROR;
+  HAL_SPI_MspDeInit(hspi);
+  HAL_SPI_MspInit(hspi);
 }
-
-#if 0
-void Master2Slave_Communicate(void) 
-{
-  /* Synchronization between Master and Slave */
-  Master_Synchro(hspi1);
-    
-  /* Receive Data from the Slave ###########################################*/ 
-  paddrcmd[0] = (uint8_t) (ADDRCMD_MASTER_READ >> 8);
-  paddrcmd[1] = (uint8_t) ADDRCMD_MASTER_READ;
-  paddrcmd[2] = (uint8_t) (DATA_LENGTH >> 8);
-  paddrcmd[3] = (uint8_t) DATA_LENGTH;
-  /* Send Master READ command to slave */
-  if(HAL_SPI_Transmit_IT(&SpiHandle, paddrcmd, CMD_LENGTH) != HAL_OK)
-  {
-    Error_Handler();
-  }
-
-  while(HAL_SPI_GetState(&SpiHandle) != HAL_SPI_STATE_READY) {}
-  /* Synchronization between Master and Slave */
-  Master_Synchro();
-    
-  /* Receive ACK from the Slave */
-  ackbytes = 0;
-  if(HAL_SPI_Receive_IT(&SpiHandle, (uint8_t *)&ackbytes, sizeof(ackbytes)) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  while(HAL_SPI_GetState(&SpiHandle) != HAL_SPI_STATE_READY) {}
-  /* Check the received ACK */
-  if(ackbytes == SPI_ACK_BYTES)
-  {
-    /* Synchronization between Master and Slave */
-    Master_Synchro();
-      
-    /* Receive the requested data from the slave */
-    if(HAL_SPI_Receive_IT(&SpiHandle, aRxBuffer, DATA_LENGTH) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    while(HAL_SPI_GetState(&SpiHandle) != HAL_SPI_STATE_READY) {}
-    /* Synchronization between Master and Slave */
-    Master_Synchro();
-      
-    /* Send ACK to the Slave */
-    ackbytes = SPI_ACK_BYTES;
-    if(HAL_SPI_Transmit_IT(&SpiHandle, (uint8_t *)&ackbytes, sizeof(ackbytes)) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    while(HAL_SPI_GetState(&SpiHandle) != HAL_SPI_STATE_READY) {}
-  }    
-  else
-  {
-    /* Transfer error in transmission process */
-    Error_Handler();
-  }
-    
-  /* Compare received buffer with one expected from slave */
-  if(Buffercmp((uint8_t*)aTxSlaveBuffer, (uint8_t*)aRxBuffer, CMD_LENGTH))
-  {
-    /* Transfer error in transmission process */
-    Error_Handler();
-  }
-  else
-  {
-    printf("compare faid!");
-  }
-  /* Synchronization between Master and Slave */
-  Master_Synchro();
-    
-  /* Transmit Data To Slave ################################################*/
-  paddrcmd[0] = (uint8_t) (ADDRCMD_MASTER_WRITE >> 8);
-  paddrcmd[1] = (uint8_t) ADDRCMD_MASTER_WRITE;
-  paddrcmd[2] = (uint8_t) (DATA_LENGTH >> 8);
-  paddrcmd[3] = (uint8_t) DATA_LENGTH;
-  /* Send Master WRITE command to the slave */
-  if(HAL_SPI_Transmit_IT(&SpiHandle, paddrcmd, CMD_LENGTH) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  while(HAL_SPI_GetState(&SpiHandle) != HAL_SPI_STATE_READY) {}
-    /* Synchronization between Master and Slave */
-  Master_Synchro();
-    
-  /* Receive ACK from the Slave */
-  ackbytes = 0;
-  if(HAL_SPI_Receive_IT(&SpiHandle, (uint8_t *)&ackbytes, sizeof(ackbytes)) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  while(HAL_SPI_GetState(&SpiHandle) != HAL_SPI_STATE_READY) {}
-  /* Check the received ACK */
-  if(ackbytes == SPI_ACK_BYTES)
-  {
-    /* Synchronization between Master and Slave */
-    Master_Synchro();
-    /* Send the requested data from the slave */
-    if(HAL_SPI_Transmit_IT(&SpiHandle, aTxMasterBuffer, DATA_LENGTH) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    while(HAL_SPI_GetState(&SpiHandle) != HAL_SPI_STATE_READY) {}
-    /* Synchronization between Master and Slave */
-    Master_Synchro();
-      
-    /* Receive ACK from the Slave */
-    ackbytes = 0;
-    if(HAL_SPI_Receive_IT(&SpiHandle, (uint8_t *)&ackbytes, sizeof(ackbytes)) != HAL_OK)
-    {
-      Error_Handler();
-    }
-    while(HAL_SPI_GetState(&SpiHandle) != HAL_SPI_STATE_READY) {}
-  }    
-  else
-  {
-    /* Transfer error in transmission process */
-    Error_Handler();
-  }
-   
-  /* Flush Rx buffer for next transmission */
-  Flush_Buffer(aRxBuffer, DATA_LENGTH);
-    
-}
-#endif
-
-#endif
-
 

@@ -1,153 +1,133 @@
-#ifndef _SPITRANSFER_H_
-#define	_SPITRANSFER_H_
+#ifndef SPITransfer_h
+#define SPITransfer_h
 
-#ifdef __cplusplus
- extern "C" {
-#endif
+//#pragma once
 
-
-#include "Packet_C.h"                 //#include "Packet.h"
+#include "Packet.h"
 #include "stm32f4xx_hal.h"
+#include "SlaveBoardConfig.h"
 #include "../LKIOCtrlBox_MSP/MSP_SPI.h"
 
-//spi1 DI_Board 1 cs引脚
-#define SPI1_DIB1_CS                         GPIO_PIN_0
-#define SPI1_DIB1_CS_Port                    GPIOB
-#define SPI1_DIB1_CS_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
-#define SPI1_DIB1_CS_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
-//spi1 DI_Board 2 cs引脚
-#define SPI1_DIB2_CS                         GPIO_PIN_1
-#define SPI1_DIB2_CS_Port                    GPIOB
-#define SPI1_DIB2_CS_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
-#define SPI1_DIB2_CS_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
-//spi1 DI_Board 3 cs引脚
-#define SPI1_DIB3_CS                         GPIO_PIN_2
-#define SPI1_DIB3_CS_Port                    GPIOB
-#define SPI1_DIB3_CS_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
-#define SPI1_DIB3_CS_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
-//spi1 DI_Board 4 cs引脚
-#define SPI1_DIB4_CS                         GPIO_PIN_3
-#define SPI1_DIB4_CS_Port                    GPIOB
-#define SPI1_DIB4_CS_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
-#define SPI1_DIB4_CS_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
-//spi1 DQ_Board 1 cs引脚
-#define SPI1_DQB1_CS                         GPIO_PIN_4
-#define SPI1_DQB1_CS_Port                    GPIOB
-#define SPI1_DQB1_CS_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
-#define SPI1_DQB1_CS_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
-//spi1 DQ_Board 2 cs引脚
-#define SPI1_DQB2_CS                         GPIO_PIN_5
-#define SPI1_DQB2_CS_Port                    GPIOB
-#define SPI1_DQB2_CS_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
-#define SPI1_DQB2_CS_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
-//spi1 RS485_Board cs引脚
-#define SPI1_RS485B_CS                       GPIO_PIN_6
-#define SPI1_RS485B_CS_Port                  GPIOB
-#define SPI1_RS485B_CS_CLK_ENABLE()          __HAL_RCC_GPIOB_CLK_ENABLE()
-#define SPI1_RS485B_CS_CLK_DISABLE()         __HAL_RCC_GPIOB_CLK_DISABLE()
-//spi1 MENU_board 1 cs引脚
-#define SPI1_MENUB_CS                        GPIO_PIN_7
-#define SPI1_MENUB_CS_Port                   GPIOB
-#define SPI1_MENUB_CS_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
-#define SPI1_MENUB_CS_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
+#define null		-1
 
-#define sTransBoard_Max                 8       //定义板子的数量 di板4块，dq板2块，rs485板1块，menu板1块
-#define sTrans_TimeOut                  20       //5 = 5ms
-
-#define SPI_ACK_BYTES             0xA5A5
-#define SPI_NACK_BYTES            0xDEAD
-#define SPI_TIMEOUT_MAX           0x1000
-#define SPI_SLAVE_SYNBYTE         0x53
-#define SPI_MASTER_SYNBYTE        0xAC
-
-/*
-#define SPI1_CS_DIB1(n)			(n?HAL_GPIO_WritePin(SPI1_DIB1_CS_Port,SPI1_DIB1_CS,GPIO_PIN_SET): \
-                                   HAL_GPIO_WritePin(SPI1_DIB1_CS_Port,SPI1_DIB1_CS,GPIO_PIN_RESET))
-#define SPI1_CS_DIB2(n)			(n?HAL_GPIO_WritePin(SPI1_DIB2_CS_Port,SPI1_DIB2_CS,GPIO_PIN_SET): \
-                                   HAL_GPIO_WritePin(SPI1_DIB2_CS_Port,SPI1_DIB2_CS,GPIO_PIN_RESET))
-#define SPI1_CS_DIB3(n)			(n?HAL_GPIO_WritePin(SPI1_DIB3_CS_Port,SPI1_DIB3_CS,GPIO_PIN_SET): \
-                                   HAL_GPIO_WritePin(SPI1_DIB3_CS_Port,SPI1_DIB3_CS,GPIO_PIN_RESET))               
-#define SPI1_CS_DIB4(n)			(n?HAL_GPIO_WritePin(SPI1_DIB4_CS_Port,SPI1_DIB4_CS,GPIO_PIN_SET): \
-                                   HAL_GPIO_WritePin(SPI1_DIB4_CS_Port,SPI1_DIB4_CS,GPIO_PIN_RESET))
-#define SPI1_CS_DQB1(n)			(n?HAL_GPIO_WritePin(SPI1_DQB1_CS_Port,SPI1_DQB1_CS,GPIO_PIN_SET): \
-                                   HAL_GPIO_WritePin(SPI1_DQB1_CS_Port,SPI1_DQB1_CS,GPIO_PIN_RESET))
-#define SPI1_CS_DQB2(n)			(n?HAL_GPIO_WritePin(SPI1_DQB2_CS_Port,SPI1_DQB2_CS,GPIO_PIN_SET): \
-                                   HAL_GPIO_WritePin(SPI1_DQB2_CS_Port,SPI1_DQB2_CS,GPIO_PIN_RESET))
-#define SPI1_CS_RS485B(n)		(n?HAL_GPIO_WritePin(SPI1_RS485B_CS_Port,SPI1_RS485B_CS,GPIO_PIN_SET): \
-                                   HAL_GPIO_WritePin(SPI1_RS485B_CS_Port,SPI1_RS485B_CS,GPIO_PIN_RESET))
-#define SPI1_CS_MENUB(n)		(n?HAL_GPIO_WritePin(SPI1_MENUB_CS_Port,SPI1_MENUB_CS,GPIO_PIN_SET): \
-                                   HAL_GPIO_WritePin(SPI1_MENUB_CS_Port,SPI1_MENUB_CS,GPIO_PIN_RESET))
-*/
-#define SPI1_CS_ENABLE(__INDEX__)       do{if((__INDEX__) == DI_Board_1)    HAL_GPIO_WritePin(SPI1_DIB1_CS_Port,SPI1_DIB1_CS,GPIO_PIN_RESET); else \
-                                           if((__INDEX__) == DI_Board_2)    HAL_GPIO_WritePin(SPI1_DIB2_CS_Port,SPI1_DIB2_CS,GPIO_PIN_RESET); else \
-                                           if((__INDEX__) == DI_Board_3)    HAL_GPIO_WritePin(SPI1_DIB3_CS_Port,SPI1_DIB3_CS,GPIO_PIN_RESET); else \
-                                           if((__INDEX__) == DI_Board_4)    HAL_GPIO_WritePin(SPI1_DIB4_CS_Port,SPI1_DIB4_CS,GPIO_PIN_RESET); else \
-                                           if((__INDEX__) == DQ_Board_1)    HAL_GPIO_WritePin(SPI1_DQB1_CS_Port,SPI1_DQB1_CS,GPIO_PIN_RESET); else \
-                                           if((__INDEX__) == DQ_Board_2)    HAL_GPIO_WritePin(SPI1_DQB2_CS_Port,SPI1_DQB2_CS,GPIO_PIN_RESET); else \
-                                           if((__INDEX__) == RS485_Board)   HAL_GPIO_WritePin(SPI1_RS485B_CS_Port,SPI1_RS485B_CS,GPIO_PIN_RESET); else \
-                                           if((__INDEX__) == MENU_Board)    HAL_GPIO_WritePin(SPI1_MENUB_CS_Port,SPI1_MENUB_CS,GPIO_PIN_RESET); \
-                                        }while(0)
-#define SPI1_CS_DISABLE(__INDEX__)      do{if((__INDEX__) == DI_Board_1)    HAL_GPIO_WritePin(SPI1_DIB1_CS_Port,SPI1_DIB1_CS,GPIO_PIN_SET); else \
-                                           if((__INDEX__) == DI_Board_2)    HAL_GPIO_WritePin(SPI1_DIB2_CS_Port,SPI1_DIB2_CS,GPIO_PIN_SET); else \
-                                           if((__INDEX__) == DI_Board_3)    HAL_GPIO_WritePin(SPI1_DIB3_CS_Port,SPI1_DIB3_CS,GPIO_PIN_SET); else \
-                                           if((__INDEX__) == DI_Board_4)    HAL_GPIO_WritePin(SPI1_DIB4_CS_Port,SPI1_DIB4_CS,GPIO_PIN_SET); else \
-                                           if((__INDEX__) == DQ_Board_1)    HAL_GPIO_WritePin(SPI1_DQB1_CS_Port,SPI1_DQB1_CS,GPIO_PIN_SET); else \
-                                           if((__INDEX__) == DQ_Board_2)    HAL_GPIO_WritePin(SPI1_DQB2_CS_Port,SPI1_DQB2_CS,GPIO_PIN_SET); else \
-                                           if((__INDEX__) == RS485_Board)   HAL_GPIO_WritePin(SPI1_RS485B_CS_Port,SPI1_RS485B_CS,GPIO_PIN_SET); else \
-                                           if((__INDEX__) == MENU_Board)    HAL_GPIO_WritePin(SPI1_MENUB_CS_Port,SPI1_MENUB_CS,GPIO_PIN_SET); \
-                                        }while(0)
-
-
-
-/*                                     
-typedef enum 
+class SPITransfer
 {
-    SpiTrans_Err        = -1,
-    SpiTrans_Wait       = 0, 
-    SpiTrans_WakeUp     = 1,
-    SpiTrans_Continue   = 2,
-    SpiTrans_End        = 3
-}SpiTransStatus_TypeDef;
-*/
-typedef enum 
-{
-  SpiTrans_TimeOut    = -2,
-  SpiTrans_Err        = -1,
-  SpiTrans_Wait       = 0, 
-  SpiTrans_M2S_TxEnd,
-  SpiTrans_S2M_RxEnd,
-  SpiTrans_WakeUp,
-  SpiTrans_Continue,
-  SpiTrans_End
-}SpiTransStatus_TypeDef;
-
-typedef enum 
-{
-  NO_Board,
-  DI_Board_1,
-  DI_Board_2,
-  DI_Board_3,
-  DI_Board_4,
-  DQ_Board_1,
-  DQ_Board_2,
-  RS485_Board,
-  MENU_Board     
-}currentBoard_TypeDef;
-extern currentBoard_TypeDef     currentBoard;
-extern SpiTransStatus_TypeDef   sTransState[sTransBoard_Max];
-#define spiRxDataLen  50
-extern uint8_t spiRxData[spiRxDataLen];
-
-void SPITransfer_Init(void);
-void Master_Synchro(currentBoard_TypeDef cBoard);
-void Slave_Synchro(currentBoard_TypeDef cBoard);
-void reset(void);
-
-//Packet  packet;
-
-
-#ifdef __cplusplus
-}
+  public: // <<---------------------------------------//public
+	Packet  packet;
+	uint8_t bytesRead = 0;
+	int8_t  status    = 0;
+	uint8_t SPI_SLAVE_ACK 		= 0x53;
+	uint8_t SPI_MASTER_ACK 		= 0xAC;
+	uint8_t SPI_Trans_END 		= 0xED;
+#if 1
+	SPITransfer(SPI_HandleTypeDef *theSPI = &hspi1, uint8_t cs = null, bool master = true);
+	//SPITransfer(bool _debug) {begin(_debug);}
 #endif
 
-#endif  //_SPITransfer_H_
+	void    begin(const configST configs);
+	void    begin(const bool _debug = true);
+	//void 	beginTransaction(void);
+	//void 	endTransaction(void);
+	bool 	write(uint8_t *buffer, size_t len,
+             	  //const uint8_t *prefix_buffer = nullptr, size_t prefix_len = 0,
+				  uint8_t cs = null);
+	bool 	read(uint8_t *buffer, size_t len, uint8_t cs = null);
+	
+	bool Master_writeACKto_Slave(uint8_t cs = null);
+	bool Master_readACKfrom_Slave(uint8_t cs = null);
+	bool Master_writeENDto_Slave(uint8_t cs = null);
+	uint8_t Master_writeCMDto_Slave_withPacket(const uint16_t& messageLen, const uint8_t packetID = 0, uint8_t cs = null);		//uint8_t writeWithPacket(const uint16_t& messageLen, const uint8_t packetID = 0);
+	SpiTransStatus_TypeDef Master_readDATAfrom_Slave_withPacket(uint8_t cs = null);
+	SpiTransStatus_TypeDef Master_Spi1_Transfer(activeBoard_TypeDef cBoard, const uint8_t boardID = 0);		//uint8_t readWithPacket();
+	uint8_t currentPacketID();
+	void    reset();
+	
+	/*
+	 uint16_t SPITransfer::txObj(const T &val, const uint16_t &index=0, const uint16_t &len=sizeof(T))
+	 Description:
+	 ------------
+	  * Stuffs "len" number of bytes of an arbitrary object (byte, int,
+	  float, double, struct, etc...) into the transmit buffer (txBuff)
+	  starting at the index as specified by the argument "index"
+	 Inputs:
+	 -------
+	  * const T &val - Pointer to the object to be copied to the
+	  transmit buffer (txBuff)
+	  * const uint16_t &index - Starting index of the object within the
+	  transmit buffer (txBuff)
+	  * const uint16_t &len - Number of bytes of the object "val" to transmit
+	 Return:
+	 -------
+	  * uint16_t maxIndex - uint16_t maxIndex - Index of the transmit buffer (txBuff) that directly follows the bytes processed
+	  by the calling of this member function
+	*/
+	template <typename T>
+	uint16_t txObj(const T& val, const uint16_t& index = 0, const uint16_t& len = sizeof(T))
+	{
+		return packet.txObj(val, index, len);
+	}
+
+
+	/*
+	 uint16_t SPITransfer::rxObj(const T &val, const uint16_t &index=0, const uint16_t &len=sizeof(T))
+	 Description:
+	 ------------
+	  * Reads "len" number of bytes from the receive buffer (rxBuff)
+	  starting at the index as specified by the argument "index"
+	  into an arbitrary object (byte, int, float, double, struct, etc...)
+	 Inputs:
+	 -------
+	  * const T &val - Pointer to the object to be copied into from the
+	  receive buffer (rxBuff)
+	  * const uint16_t &index - Starting index of the object within the
+	  receive buffer (rxBuff)
+	  * const uint16_t &len - Number of bytes in the object "val" received
+	 Return:
+	 -------
+	  * uint16_t maxIndex - Index of the receive buffer (rxBuff) that directly follows the bytes processed
+	  by the calling of this member function
+	*/
+	template <typename T>
+	uint16_t rxObj(const T& val, const uint16_t& index = 0, const uint16_t& len = sizeof(T))
+	{
+		return packet.rxObj(val, index, len);
+	}
+
+	/*
+	 uint8_t SPITransfer::sendDatum(const T &val, const uint16_t &len=sizeof(T))
+	 Description:
+	 ------------
+	  * Stuffs "len" number of bytes of an arbitrary object (byte, int,
+	  float, double, struct, etc...) into the transmit buffer (txBuff)
+	  starting at the index as specified by the argument "index" and
+	  automatically transmits the bytes in an individual packet
+	 Inputs:
+	 -------
+	  * const T &val - Pointer to the object to be copied to the
+	  transmit buffer (txBuff)
+	  * const uint16_t &len - Number of bytes of the object "val" to transmit
+	 Return:
+	 -------
+	  * uint8_t - Number of payload bytes included in packet
+	*/
+	template <typename T>
+	uint8_t writeDatumWithPacket(const T& val, const uint16_t& len = sizeof(T))
+	{
+		return writeWithPacket(packet.txObj(val, 0, len));
+	}
+
+
+  private: // <<---------------------------------------//private
+	SPI_HandleTypeDef *_spi = nullptr;
+
+	uint8_t spiRxData[spiRxDataLen];		//打印测试信息用
+
+	uint8_t _master, _cs;
+
+	uint8_t spiTxRx_reRunTimes = 3;			//spi发送或接收的重复次数
+
+	bool _begun;
+};
+
+#endif // SPITransfer_H
+

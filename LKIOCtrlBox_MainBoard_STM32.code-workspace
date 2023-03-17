@@ -1,19 +1,13 @@
 {
 	"folders": [
 		{
+			"path": "../Modbus-STM32-HAL-FreeRTOS-master"
+		},
+		{
 			"path": "."
 		},
 		{
-			"path": "../../../../../../STM32Cube/Example/SPI_FullDuplex_ComIT"
-		},
-		{
-			"path": "../../../../../../STM32Cube/Example/SPI_FullDuplex_AdvComIT"
-		},
-		{
-			"path": "../DIBoard"
-		},
-		{
-			"path": "../Test_Mix_C_CPP"
+			"path": "../../../../stm32project/DEVBoard_FreeRTOS_V2"
 		}
 	],
 	"settings": {
@@ -36,7 +30,18 @@
 			"unordered_map": "cpp",
 			"unordered_set": "cpp",
 			"vector": "cpp",
-			"ranges": "cpp"
+			"ranges": "cpp",
+			"chrono": "c",
+			"__config": "cpp",
+			"__nullptr": "cpp",
+			"cmsis_os.h": "c",
+			"semphr.h": "c",
+			"freertos.h": "c",
+			"freertosconfig.h": "c",
+			"cmsis_compiler.h": "c",
+			"portmacro.h": "c",
+			"timers.h": "c",
+			"rte_components.h": "c"
 		}
 	}
 }

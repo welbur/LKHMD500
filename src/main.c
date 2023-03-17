@@ -31,17 +31,6 @@
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
-/* USER CODE BEGIN PD */
-#define DATA_LENGTH                                 ((uint16_t)0x0020)   
-/* Size of buffer */
-#define BUFFERSIZE                       (COUNTOF(aTxBuffer) - 1)
-#define COUNTOF(__BUFFER__)   (sizeof(__BUFFER__) / sizeof(*(__BUFFER__)))
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 #if 1
@@ -53,33 +42,20 @@
   #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #endif /* __GNUC__ */
 #endif
-/* USER CODE BEGIN PV */
 
-/* USER CODE END PV */
+/*定义默认的Slave板ID*/
+uint8_t DefaultBoardID = 0x00;
+/*modbus相关参数*/
+modbusHandler_t ModbusH;
+uint16_t ModbusDATA[128];
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
+void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
-
-  const char wbuf[] = "BORING-TECH STM32 TEST";
-  char rbuf[50];
-
-  const char wbuf1[] = "BORING-TECH STM32 TEST1";
-  char rbuf1[20];
-
-/* Buffer used for transmission */
-uint8_t aTxBuffer[] = {100, 200}; //"****SPI - Two Boards communication based on Interrupt ****";
-
-/* Buffer used for reception */
-//uint8_t aRxBuffer[BUFFERSIZE];
-uint8_t aRxBuffer[DATA_LENGTH];
-
-
-currentBoard_TypeDef   currentBoard = NO_Board;
+/**/
+SlaveBoardStatus_TypeDef  sbStatus;
 
 /**
   * @brief  The application entry point.
@@ -97,46 +73,48 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
   MX_SPI1_Init();
   MX_USART1_UART_Init();
+  MX_USART2_UART_Init();
   MX_SPI2_Init();
 
   EXTILine_Config();
   SPITransfer_Init();
-  
-//  wTransferState = TRANSFER_WAIT;
-  Set_WorkLed_Status(WorkNormal, 1000);
 
-  //打开串口接收中断
-  if(HAL_UART_Receive_IT(&huart1, &rx1_buf, 1) != HAL_OK) Error_Handler();
+#if 1
+	/* Slave initialization */
+	ModbusH.uModbusType = MB_SLAVE;
+	ModbusH.port = &huart2;
+	ModbusH.u8id = 1; // slave ID,  For master it must be 0
+	ModbusH.u16timeOut = 1000;
+	ModbusH.EN_Port = NULL; // No RS485   //ModbusH.EN_Port = NULL;
+	ModbusH.EN_Pin = 0;
+	// ModbusH2.EN_Port = LD2_GPIO_Port; // RS485 Enable
+	// ModbusH2.EN_Pin = LD2_Pin; // RS485 Enable
+	ModbusH.u16regs = ModbusDATA;
+	ModbusH.u16regsize = sizeof(ModbusDATA) / sizeof(ModbusDATA[0]);
+	ModbusH.xTypeHW = USART_HW_DMA;
+#endif
+  printf("start modbus...\r\n");
+	// Initialize Modbus library
+	ModbusInit(&ModbusH);
+	// Start capturing traffic on serial Port
+	ModbusStart(&ModbusH);
+	/***********/
 
-  printf("wait spi2 receive \r\n");
-  //打开SPI2接收中断
-  /* Receive the requested data from the master */
-  //if(HAL_SPI_Receive_IT(&hspi2, aRxBuffer, 5) != HAL_OK) Error_Handler();
+  printf("start FreeRTOS\r\n");
 
-  //while(HAL_SPI_GetState(&hspi2) != HAL_SPI_STATE_READY)
-  //{}
-  //printf("spi2 data : %d, %d, %d, %d, %d\r\n", aRxBuffer[0], aRxBuffer[1], aRxBuffer[2], aRxBuffer[3], aRxBuffer[4]);
-  printf("start loop\r\n");
-  HAL_Delay(2000);		
   /* Infinite loop */
+  osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
+  MX_FREERTOS_Init();
+  /* Start scheduler */
+  osKernelStart();
+
+  printf("start loop\r\n");
+
   while (1)
   {
-    //作为从设备，从主设备读取数据
-    /*
-    if(HAL_SPI_Receive_IT(&hspi2, aRxBuffer, 5) != HAL_OK) Error_Handler();
-    while(HAL_SPI_GetState(&hspi2) != HAL_SPI_STATE_READY) {}
-    printf("spi2 111 data : %d, %d, %d, %d, %d\r\n", aRxBuffer[0], aRxBuffer[1], aRxBuffer[2], aRxBuffer[3], aRxBuffer[4]);
-    */
-
-    WorkLed();
-    //printf("current board : %d, strans state : %d\r\n", currentBoard, sTransState[currentBoard]);
-    if (currentBoard != NO_Board && sTransState[currentBoard] != SpiTrans_End) {
-      Master_Synchro(currentBoard);
-      currentBoard = NO_Board;
-    }
-		//HAL_Delay(3000);		
   }
 }
 
@@ -197,37 +175,6 @@ PUTCHAR_PROTOTYPE
 }
 
 /**
-  * @brief EXTI line detection callbacks
-  * @param GPIO_Pin: Specifies the pins connected EXTI line
-  * @retval None
-  */
-uint8_t ledr_v = 1, ledb_v = 1;
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  ledr_v = 1 - ledr_v;
-  ledb_v = 1 - ledb_v;
-  switch (GPIO_Pin) 
-  {
-    case KEY_Pin:
-      printf("DEV button\r\n");
-      currentBoard = DI_Board_1;
-      break;
-    case DIB_INT_PIN1:
-      printf("di board 1 int pin\r\n");
-      currentBoard = DI_Board_1;
-      //sTransState[DI_Board_1] =  SpiTrans_WakeUp;
-      //Master_Synchro(DI_Board_1);
-      break;
-    case DQB_INT_PIN1:
-      printf("DQ board 1 int pin\r\n");
-      //sTransState[DQ_Board_1] =  SpiTrans_WakeUp;
-      break;
-    default:
-      printf("int gpio pin not found!");
-  }
-}
-
-/**
   * @brief  This function is executed in case of error occurrence.
   * @retval None
   */
@@ -235,7 +182,6 @@ void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
   printf("error handler!\r\n");
-  Set_WorkLed_Status(WorkError, 500);
   /* USER CODE END Error_Handler_Debug */
 }
 

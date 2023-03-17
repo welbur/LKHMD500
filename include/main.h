@@ -36,10 +36,13 @@ extern "C" {
 #include "MSP_GPIO.h"
 #include "MSP_USART.h"
 #include "MSP_SPI.h"
-#include "SPITransfer.h"
+#include "SPITransfer_C.h"
 #include "stdio.h"
-#include "Packet_C.h"
+#include "SlaveBoardConfig.h"
 
+#include "Modbus.h"
+#include "cmsis_os.h"
+#include "dma.h"
 //#include "tftlcd.h"
 //#include "w25qxx.h"
 /* USER CODE END Includes */
@@ -63,6 +66,7 @@ extern "C" {
 void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
+#if 0
 #define KEY_Pin GPIO_PIN_13
 #define KEY_GPIO_Port GPIOC
 
@@ -79,12 +83,19 @@ void Error_Handler(void);
 #define LCD_RST_GPIO_Port GPIOB
 #define LCD_PWR_Pin GPIO_PIN_7
 #define LCD_PWR_GPIO_Port GPIOB
-
+#endif
 
 #define USEDGPIOx_CLK_ENABLE(__INDEX__)     do{if((__INDEX__) == 0) KEY_Pin_CLK_ENABLE(); else \
                                                if((__INDEX__) == 1) DIB_INT_PIN1_CLK_ENABLE(); else \
                                                if((__INDEX__) == 2) DIB_INT_PIN2_CLK_ENABLE(); \
                                                  }while(0)
+
+
+// 位操作函数
+//#define SET_BIT(reg, bit)   ((reg) |= (1 << (bit)))
+//#define CLEAR_BIT(reg, bit) ((reg) &= ~(1 << (bit)))
+#define isBIT_SET(reg, bit)  ((reg) & (1 << (bit)))         //(reg & (1 << bit)) >> bit
+//#define TOGGLE_BIT(reg, bit) ((reg) ^= (1 << (bit)))
 
 typedef int32_t  s32;
 typedef int16_t s16;
@@ -118,6 +129,15 @@ typedef __I uint32_t vuc32;
 typedef __I uint16_t vuc16; 
 typedef __I uint8_t vuc8;  
 
+typedef struct
+{
+  SpiTransStatus_TypeDef    sTransState[sTransBoard_Max];
+  activeBoard_TypeDef       activeBoard;
+
+}SlaveBoardStatus_TypeDef;
+
+extern modbusHandler_t ModbusH;
+extern uint16_t ModbusDATA[128];
 
 #ifdef __cplusplus
 }

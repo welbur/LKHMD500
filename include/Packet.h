@@ -61,7 +61,7 @@ class Packet
 	uint8_t bytesRead = 0;
 	int8_t  status    = 0;
 
-	Packet(bool _debug) {begin(_debug);}
+	//Packet(bool _debug) {begin(_debug);}
 	void    begin(const configST& configs);
 	void    begin(const bool& _debug = true, const uint32_t& _timeout = DEFAULT_TIMEOUT);
 	uint8_t constructPacket(const uint16_t& messageLen, const uint8_t& packetID = 0);
@@ -107,7 +107,6 @@ class Packet
 			txBuff[i] = *ptr;
 			ptr++;
 		}
-
 		return maxIndex;
 	}
 
@@ -149,10 +148,8 @@ class Packet
 			*ptr = rxBuff[i];
 			ptr++;
 		}
-
 		return maxIndex;
 	}
-
 
   private: // <<---------------------------------------//private
 	enum fsm

@@ -16,9 +16,8 @@
   */
 #include "MSP_GPIO.h"
 
+//uint8_t DefaultBoardID = 0;
 HAL_TickFreqTypeDef TickFreq = HAL_TICK_FREQ_DEFAULT;  /* 1KHz */
-uint32_t asyncTickstart = 0;
-LedPara_TypeDef LedPara;
 
 /** Configure pins as
         * Analog
@@ -29,7 +28,7 @@ LedPara_TypeDef LedPara;
         * Free pins are configured automatically as Analog (this feature is enabled through
         * the Code Generation settings)
 */
-#if DEVBoard
+#if 1   //(DEVBoard | DEVBoardYD)
 void MX_GPIO_Init(void)
 {
 
@@ -50,14 +49,14 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(KEY_GPIO_Port, &GPIO_InitStruct);
-#endif
 
   /*Configure GPIO pins : PCPin PCPin PCPin */
   GPIO_InitStruct.Pin = RED_Pin|GREEN_Pin|BLUE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+  HAL_GPIO_Init(RED_GPIO_Port, &GPIO_InitStruct);
+#endif
 
 #if 0
   /*Configure GPIO pin : PtPin */
@@ -76,44 +75,6 @@ void MX_GPIO_Init(void)
 #endif
 }
 #endif
-
-/*
- * Sys work led
-*/
-void WorkLed(void)
-{
-  if (asyncTickstart == 0) 
-  {
-    asyncTickstart = HAL_GetTick();
-  }
-  if ((HAL_GetTick() - asyncTickstart) >= LedPara.LedBlinkFreq)
-  {
-    if (LedPara.LedStatus == WorkNormal) {
-      LED_G_TogglePin;
-    } else if (LedPara.LedStatus == WorkError) {
-      LED_R_TogglePin;
-    }
-    asyncTickstart = HAL_GetTick();
-  }
-}
-
-/**
-  * @brief set work led status
-  * @param ls: led work status : normal, error
-  * @param n : led blink times
-  * @retval None
-  */
-void Set_WorkLed_Status(LedStatus_TypeDef ls, uint32_t bf)
-{
-  //if (ls == WorkNormal) return;
-  LedPara.LedStatus = ls;
-  /* Add a freq to guarantee minimum wait */
-  if (bf < HAL_MAX_DELAY)
-  {
-    bf = bf + (uint32_t)(TickFreq);
-  }
-  LedPara.LedBlinkFreq = bf;
-}
 
 /**
   * @brief  Configures EXTI Line0 (connected to PA0 pin) in interrupt mode
@@ -195,76 +156,37 @@ void EXTILine_Config(void)
     HAL_NVIC_EnableIRQ(MENUB_INT_PIN_EXTI_IRQn);
 }
 
-
-#if 0
 /**
-  * @brief  Configures Button GPIO and EXTI Line.
-  * @param  Button: Specifies the Button to be configured.
-  *   This parameter should be: BUTTON_KEY
-  * @param  ButtonMode: Specifies Button mode.
-  *   This parameter can be one of following parameters:   
-  *     @arg BUTTON_MODE_GPIO: Button will be used as simple IO 
-  *     @arg BUTTON_MODE_EXTI: Button will be connected to EXTI line with interrupt
-  *                            generation capability  
+  * @brief EXTI line detection callbacks
+  * @param GPIO_Pin: Specifies the pins connected EXTI line
+  * @retval None
   */
-void BSP_PB_Init(UsedGPIO_TypeDef UsedGPIO, UsedGPIOMode_TypeDef UsedGPIOMode)
+uint8_t ledr_v = 1, ledb_v = 1;
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  GPIO_InitTypeDef GPIO_InitStruct;
-  
-  /* Enable the BUTTON Clock */
-  USEDGPIOx_CLK_ENABLE(UsedGPIO);
-  
-  if(UsedGPIOMode == GPIO_MODE)
+  ledr_v = 1 - ledr_v;
+  ledb_v = 1 - ledb_v;
+  switch (GPIO_Pin) 
   {
-    /* Configure Button pin as input */
-    GPIO_InitStruct.Pin = USEDGPIO_PIN[UsedGPIO];
-    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-    GPIO_InitStruct.Pull = GPIO_PULLDOWN;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FAST;
-    HAL_GPIO_Init(USEDGPIO_PORT[UsedGPIO], &GPIO_InitStruct);
-  }
-  
-  if(UsedGPIOMode == EXTI_MODE)
-  {
-    /* Configure Button pin as input with External interrupt */
-    GPIO_InitStruct.Pin = USEDGPIO_PIN[UsedGPIO];
-    GPIO_InitStruct.Pull = GPIO_PULLUP; //GPIO_NOPULL;
-    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING; 
-    HAL_GPIO_Init(USEDGPIO_PORT[UsedGPIO], &GPIO_InitStruct);
-
-    /* Enable and set Button EXTI Interrupt to the lowest priority */
-    HAL_NVIC_SetPriority((IRQn_Type)(USEDGPIO_IRQn[UsedGPIO]), 0x0F, 0x00);
-    HAL_NVIC_EnableIRQ((IRQn_Type)(USEDGPIO_IRQn[UsedGPIO]));
-    printf("exit pin : %d\r\n", USEDGPIO_PIN[UsedGPIO]);
-  }
-}
-
-/**
-  * @brief  Push Button DeInit.
-  * @param  Button: Button to be configured
-  *   This parameter should be: BUTTON_KEY
-  * @note PB DeInit does not disable the GPIO clock
-  */
-void BSP_PB_DeInit(UsedGPIO_TypeDef UsedGPIO)
-{
-    GPIO_InitTypeDef gpio_init_structure;
-
-    gpio_init_structure.Pin = USEDGPIO_PIN[UsedGPIO];
-    HAL_NVIC_DisableIRQ((IRQn_Type)(USEDGPIO_IRQn[UsedGPIO]));
-    HAL_GPIO_DeInit(USEDGPIO_PORT[UsedGPIO], gpio_init_structure.Pin);
-}
-
-/**
-  * @brief  Returns the selected Button state.
-  * @param  Button: Specifies the Button to be checked.
-  *   This parameter should be: BUTTON_KEY  
-  * @retval The Button GPIO pin value.
-  */
-uint32_t BSP_PB_GetState(UsedGPIO_TypeDef UsedGPIO)
-{
-  return HAL_GPIO_ReadPin(USEDGPIO_PORT[UsedGPIO], USEDGPIO_PIN[UsedGPIO]);
-}
+    case KEY_Pin:
+      Enable_Board(DI_Board_1);
+      Enable_Board(DQ_Board_1);
+      printf("DEV button........%d\r\n", isBoard_Enable(DI_Board_1));
+      break;
+#if DEVBoard
+    case DIB_INT_PIN1:
+      Enable_Board(DI_Board_1);
+      printf("di board 1 int pin........%d\r\n", isBoard_Enable(DI_Board_1));
+      break;
 #endif
+    case DQB_INT_PIN1:
+      Enable_Board(DQ_Board_1);
+      printf("DQ board 1 int pin........%d\r\n", isBoard_Enable(DQ_Board_1));
+      break;
+    default:
+      printf("int gpio pin not found!");
+  }
+}
 //配置文件在.h文件中
 
 

@@ -1,5 +1,5 @@
 #include "Packet.h"
-#include "Packet_C.h"
+//#include "Packet_C.h"
 
 
 PacketCRC crc;
@@ -187,7 +187,6 @@ uint8_t Packet::parse(const uint8_t& recChar, const bool& valid)
 			{
 				rxBuff[payIndex] = recChar;
 				payIndex++;
-
 				if (payIndex == bytesToRec)
 					state    = find_crc;
 			}
@@ -197,7 +196,6 @@ uint8_t Packet::parse(const uint8_t& recChar, const bool& valid)
 		case find_crc: ///////////////////////////////////////////
 		{
 			uint8_t calcCrc = crc.calculate(rxBuff, bytesToRec);
-
 			if (calcCrc == recChar)
 				state = find_end_byte;
 			else
@@ -387,7 +385,6 @@ void Packet::unpackPacket(uint8_t arr[])
 {
 	uint8_t testIndex = recOverheadByte;
 	uint8_t delta     = 0;
-
 	if (testIndex <= MAX_PACKET_SIZE)
 	{
 		while (arr[testIndex])
@@ -423,10 +420,15 @@ void Packet::reset()
 	packetStart = 0;
 }
 
-
+#if 0
 extern void *Packet_C_New(void)
 {
 	return new Packet(false);
+}
+extern uint8_t Packet_C_constructPacket(void *packet, uint16_t messageLen, uint8_t packetID)
+{
+	Packet *pack = (Packet *)packet;
+	return pack->constructPacket(messageLen, packetID);
 }
 extern uint8_t Packet_C_parse(void *packet, uint8_t recChar, int valid)
 {
@@ -438,8 +440,41 @@ extern int8_t Packet_C_getPacketStatus(void *packet)
 	Packet *pack = (Packet *)packet;
 	return pack->status;
 }
+extern uint8_t * Packet_C_getPackettxBuff(void *packet)
+{
+	Packet *pack = (Packet *)packet;
+	return pack->txBuff;
+}
+extern uint8_t * Packet_C_getPacketrxBuff(void *packet)
+{
+	Packet *pack = (Packet *)packet;
+	return pack->rxBuff;
+}
+extern uint16_t Packet_C_txobj(void *packet, uint8_t *val, uint16_t index)
+{
+	Packet *pack = (Packet *)packet;
+	uint8_t txbuf[50];
+	for (int i =0; i < 4; i++) {
+		txbuf[i] = *val;
+		val++;
+	}
+	index = pack->txObj(txbuf, index);
+	return index;			
+}
+extern uint16_t Packet_C_rxobj(void *packet, uint8_t *val, uint16_t index)
+{
+	Packet *pack = (Packet *)packet;
+	uint8_t rbuf[50];
+	index = pack->rxObj(rbuf, index, pack->bytesRead);
+	for (int i =0; i < index; i++) {
+		*val = rbuf[i];
+		val++;
+	}
+	return index;			
+}
 extern void Packet_C_reset(void *packet)
 {
 	Packet *pack = (Packet *)packet;
 	pack->reset();
 }
+#endif
