@@ -43,11 +43,13 @@
 #endif /* __GNUC__ */
 #endif
 
-/*定义默认的Slave板ID*/
-uint8_t DefaultBoardID = 0x00;
+
 /*modbus相关参数*/
 modbusHandler_t ModbusH;
 uint16_t ModbusDATA[128];
+
+/*SPITrans相关参数*/
+SlaveBoardStatus_TypeDef SlaveBoardStatus;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -55,7 +57,6 @@ void MX_FREERTOS_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /**/
-SlaveBoardStatus_TypeDef  sbStatus;
 
 /**
   * @brief  The application entry point.
@@ -82,8 +83,11 @@ int main(void)
   EXTILine_Config();
   SPITransfer_Init();
 
+  /*Slave板状态 初始化*/
+  SlaveBoardStatus.activeBoard = NO_Board;
+  //SlaveBoardStatus.sTransState = SpiTrans_Wait;
 #if 1
-	/* Slave initialization */
+	/* Modbus 从站初始化Slave initialization */
 	ModbusH.uModbusType = MB_SLAVE;
 	ModbusH.port = &huart2;
 	ModbusH.u8id = 1; // slave ID,  For master it must be 0
@@ -185,6 +189,26 @@ void Error_Handler(void)
   /* USER CODE END Error_Handler_Debug */
 }
 
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM2 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM2) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 #ifdef  USE_FULL_ASSERT
 /**

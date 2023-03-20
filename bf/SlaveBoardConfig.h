@@ -90,6 +90,7 @@
 #define MENUB_INT_PIN_EXTI_SP                 7
 
 #define GPIO_EXTI_PP              2       //定义GPIO中断的主优先级
+#define SlaveBoard_Max            8
 
 #define SPI1_CS_ENABLE(__INDEX__)       do{if((__INDEX__) == DI_Board_1)    HAL_GPIO_WritePin(SPI1_DIB1_CS_Port,SPI1_DIB1_CS,GPIO_PIN_RESET); else \
                                            if((__INDEX__) == DI_Board_2)    HAL_GPIO_WritePin(SPI1_DIB2_CS_Port,SPI1_DIB2_CS,GPIO_PIN_RESET); else \
@@ -111,11 +112,12 @@
                                         }while(0)
 
 
-extern uint8_t DefaultBoardID;
+
+//extern uint8_t DefaultBoardID;
 // 板ID位操作函数
-#define Enable_Board(bit)   ((DefaultBoardID) |= (1 << (bit)))
-#define Disable_Baord(bit) ((DefaultBoardID) &= ~(1 << (bit)))
-#define isBoard_Enable(bit)  ((DefaultBoardID) & (1 << (bit))) >> bit         //(reg & (1 << bit)) >> bit
+//#define Enable_Board(reg, bit)   ((reg) |= (1 << (bit)))
+//#define Disable_Baord(reg, bit) ((reg) &= ~(1 << (bit)))
+#define isBoard_Enable(reg, bit)  ((reg) & (1 << (bit))) >> bit         //(reg & (1 << bit)) >> bit
 //#define TOGGLE_BIT(reg, bit) ((reg) ^= (1 << (bit)))
 
 typedef enum 
@@ -136,14 +138,14 @@ typedef enum
 typedef enum 
 {
   NO_Board      = 0,
-  DI_Board_1    ,       //= 0b00000001,
-  DI_Board_2    ,       //= 0b00000010,	//2,
-  DI_Board_3    ,       //= 0b00000100,
-  DI_Board_4    ,       //= 0b00001000,
-  DQ_Board_1    ,       //= 0b00010000,
-  DQ_Board_2    ,       //= 0b00100000,
-  RS485_Board   ,       //= 0b01000000,	//64,
-  MENU_Board    ,       //= 0b10000000,	//128     
+  DI_Board_1    = 0b00000001,
+  DI_Board_2    = 0b00000010,	//2,
+  DI_Board_3    = 0b00000100,
+  DI_Board_4    = 0b00001000,
+  DQ_Board_1    = 0b00010000,
+  DQ_Board_2    = 0b00100000,
+  RS485_Board   = 0b01000000,	//64,
+  MENU_Board    = 0b10000000,	//128     
 }activeBoard_TypeDef;
 
 
@@ -163,6 +165,12 @@ typedef enum
 
 }slaveBoardRegAddr_TypeDef;
 
+typedef struct
+{
+  SpiTransStatus_TypeDef    sTransState[SlaveBoard_Max];
+  activeBoard_TypeDef       activeBoard;
+
+}SlaveBoardStatus_TypeDef;
 
 /*  DI Board cmd
  *  cmd 由5个字节组成：boardID + CmdCode + RegAddr + para1 + para2

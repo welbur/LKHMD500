@@ -5,7 +5,8 @@
 
 #include "Packet.h"
 #include "stm32f4xx_hal.h"
-#include "SlaveBoardConfig.h"
+//#include "SlaveBoardConfig.h"
+#include "SPITransfer_C.h"
 #include "../LKIOCtrlBox_MSP/MSP_SPI.h"
 
 #define null		-1
@@ -36,9 +37,9 @@ class SPITransfer
 	bool Master_writeACKto_Slave(uint8_t cs = null);
 	bool Master_readACKfrom_Slave(uint8_t cs = null);
 	bool Master_writeENDto_Slave(uint8_t cs = null);
-	uint8_t Master_writeCMDto_Slave_withPacket(const uint16_t& messageLen, const uint8_t packetID = 0, uint8_t cs = null);		//uint8_t writeWithPacket(const uint16_t& messageLen, const uint8_t packetID = 0);
+	uint8_t Master_writeCMDto_Slave_withPacket(const uint16_t& messageLen, const uint8_t boardID = null);		//uint8_t writeWithPacket(const uint16_t& messageLen, const uint8_t packetID = 0);
 	SpiTransStatus_TypeDef Master_readDATAfrom_Slave_withPacket(uint8_t cs = null);
-	SpiTransStatus_TypeDef Master_Spi1_Transfer(activeBoard_TypeDef cBoard, const uint8_t boardID = 0);		//uint8_t readWithPacket();
+	SpiTransStatus_TypeDef Master_Spi1_Transfer(const uint8_t boardID = null);		//uint8_t readWithPacket();
 	uint8_t currentPacketID();
 	void    reset();
 	
@@ -120,7 +121,7 @@ class SPITransfer
   private: // <<---------------------------------------//private
 	SPI_HandleTypeDef *_spi = nullptr;
 
-	uint8_t spiRxData[spiRxDataLen];		//打印测试信息用
+//	uint8_t spiRxData[spiRxDataLen];		//打印测试信息用
 
 	uint8_t _master, _cs;
 

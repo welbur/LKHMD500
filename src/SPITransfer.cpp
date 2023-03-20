@@ -3,7 +3,7 @@
 //#if not(defined(MBED_H) || defined(__SAM3X8E__) || defined(DISABLE_SPI_SERIALTRANSFER)) // These boards are/will not be supported by SPITransfer.h
 
 #include "SPITransfer.h"
-#include "SPITransfer_C.h"
+//#include "SPITransfer_C.h"
 
 /*!
  *    @brief  Create an SPI device with the given CS pin and settings
@@ -187,10 +187,10 @@ bool SPITransfer::Master_writeENDto_Slave(uint8_t cs)
  -------
   * uint8_t numBytesIncl - Number of payload bytes included in packet
 */
-uint8_t SPITransfer::Master_writeCMDto_Slave_withPacket(const uint16_t& messageLen, const uint8_t packetID, uint8_t cs) 
+uint8_t SPITransfer::Master_writeCMDto_Slave_withPacket(const uint16_t& messageLen, const uint8_t boardID) 
 {
-	uint8_t numBytesIncl = packet.constructPacket(messageLen, packetID);
-	if (cs != -1) _cs = cs;
+	uint8_t numBytesIncl = packet.constructPacket(messageLen, boardID);
+	if (boardID != -1) _cs = boardID;
 	MSP_SPI_write(_spi, _cs, packet.preamble, sizeof(packet.preamble));
 	MSP_SPI_write(_spi, _cs, packet.txBuff, numBytesIncl);
 	MSP_SPI_write(_spi, _cs, packet.postamble, sizeof(packet.postamble));
@@ -200,16 +200,16 @@ uint8_t SPITransfer::Master_writeCMDto_Slave_withPacket(const uint16_t& messageL
 
 SpiTransStatus_TypeDef SPITransfer::Master_readDATAfrom_Slave_withPacket(uint8_t cs)
 {
-  	uint32_t msTickstart = HAL_GetTick();
+  	uint32_t msTickstart = xTaskGetTickCount();			//HAL_GetTick();
   	uint8_t recChar = 0xF0;
 	bytesRead = 0;
 	if (cs != -1) _cs = cs;
   	uint8_t rxi = 0;    //打印测试信息用
 	do
   	{
-		if (!MSP_SPI_read(_spi, _cs, &recChar, 1)) return SpiTrans_Err;
-    	
-		spiRxData[rxi++] 		 = recChar;   //打印测试信息用
+		if (!MSP_SPI_read(_spi, _cs, &recChar, 1)) {printf(" %d, ", recChar); return SpiTrans_Err;}
+    	//printf(" %d, ", rxi);
+		SlaveBoardStatus.spiRxData[rxi++] 		 = recChar;   //打印测试信息用
     	bytesRead                = packet.parse(recChar);
 		status                   = packet.status;
 		if (status != CONTINUE) {
@@ -218,14 +218,14 @@ SpiTransStatus_TypeDef SPITransfer::Master_readDATAfrom_Slave_withPacket(uint8_t
       		return SpiTrans_S2M_RxData_End;                   //sTransState[cBoard] = SpiTrans_S2M_RxData_End;
 			//break;
 		}
-	}while((HAL_GetTick() - msTickstart) < sTrans_TimeOut);             //while(recChar != 129); //0xAA);
+	}while((xTaskGetTickCount() - msTickstart) < sTrans_TimeOut);             //while(recChar != 129); //0xAA);
 
 #if 1   //打印测试信息
   	printf("read spi data len : %d\r\n", rxi);
-  	for (int i = 0; i < rxi; i++) {
-    	printf("%d, ", spiRxData[i]);
-  	}
-  	printf("-------------%ld\r\n", HAL_GetTick());
+  	//for (int i = 0; i < rxi; i++) {
+    //	printf("%d, ", spiRxData[i]);
+  	//}
+  	//printf("-------------%ld\r\n", xTaskGetTickCount());
   	printf("status : %d\r\n", status);
   	rxi = 0;
 #endif
@@ -247,22 +247,26 @@ SpiTransStatus_TypeDef SPITransfer::Master_readDATAfrom_Slave_withPacket(uint8_t
   * @param  currentBoard_TypeDef 当前触发的板子号
   * @retval None                                            如果同步成功，返回true
   */
-SpiTransStatus_TypeDef SPITransfer::Master_Spi1_Transfer(activeBoard_TypeDef cBoard, const uint8_t boardID)
+SpiTransStatus_TypeDef SPITransfer::Master_Spi1_Transfer(uint8_t boardID)
 {
-  	printf("current board : --------------------------------------------------------------------%d\r\n", cBoard);
+  	//printf("current board : --------------------------------------------------------------------%d\r\n", boardID);
+	if (boardID == -1) return SpiTrans_Err;
+
 /*****如果没收到slave板发过来的ack信号， master板就重新发送一次ack信号给slave板，循环3次都失败的话，退出报错*****/  
 	for (int i = 0; i < spiTxRx_reRunTimes; i++) {
 		/* 1------主控板发送 ACK signal 给 slave板 */
-		if (Master_writeACKto_Slave(cBoard)) {
+		if (Master_writeACKto_Slave(boardID)) {
 			printf("tx ack end\r\n");
+			break;
   		} else { 
 			printf("tx ack err\r\n");
 			if (i >= (spiTxRx_reRunTimes - 1)) return SpiTrans_M2S_TxAck_Err;    //{sTransState[cBoard] = SpiTrans_M2S_TxAck_Err; return;}
 			else continue;
 		}
-
+	}
+#if 0
   		/* 2------从slave板接收ACK信号------------ */
-  		if (Master_readACKfrom_Slave(cBoard)) {
+  		if (Master_readACKfrom_Slave(boardID)) {
 			printf("rx ack end\r\n");
 			break;
   		} else {
@@ -277,12 +281,13 @@ SpiTransStatus_TypeDef SPITransfer::Master_Spi1_Transfer(activeBoard_TypeDef cBo
   	uint8_t txbuf[4] = {0x01, 0x02, 0x03, 0xAA};
   	uint16_t sendSize = 0;
   	sendSize = packet.txObj(txbuf, sendSize);                     			//1-------封装数据
-  	Master_writeCMDto_Slave_withPacket(sendSize, boardID, cBoard);            //2-------发送数据
-
+  	Master_writeCMDto_Slave_withPacket(sendSize, boardID);            		//2-------发送数据
+#endif
   	/* 4------从slave板接收数据------------ */
   	uint16_t recSize = 0;
   	uint8_t rbuf[50];
-  	SpiTransStatus_TypeDef ss = Master_readDATAfrom_Slave_withPacket(cBoard);            	//1-----接收数据
+	printf("start read data from slave \r\n");
+  	SpiTransStatus_TypeDef ss = Master_readDATAfrom_Slave_withPacket(boardID);            	//1-----接收数据
   	if (ss != SpiTrans_S2M_RxData_End) { printf("read rxdata err\r\n"); return ss; }
   	recSize = packet.rxObj(rbuf, recSize);                                  				//2-------解析出可用数据
   	printf("rec data : ");
@@ -292,7 +297,7 @@ SpiTransStatus_TypeDef SPITransfer::Master_Spi1_Transfer(activeBoard_TypeDef cBo
   	printf(".......%d\r\n", recSize);
 
 	/* 5------接收完数据后，master板发送end信号给slave板------------ */
-	if (!Master_writeENDto_Slave(cBoard)) { printf("write end to slave err\r\n"); return SpiTrans_Err; }
+	if (!Master_writeENDto_Slave(boardID)) { printf("write end to slave err\r\n"); return SpiTrans_Err; }
 	
 	return SpiTrans_End;
 }
@@ -344,11 +349,14 @@ extern void *SPITransfer_C_New(SPI_HandleTypeDef *theSPI, uint8_t cs, uint8_t ma
 {
 	return new SPITransfer(theSPI, cs, (bool)master);
 }
-extern SpiTransStatus_TypeDef SPITransfer_C_Master_Spi1_Transfer(void *SpiTrans, activeBoard_TypeDef cBoard, uint8_t boardID)
+extern SpiTransStatus_TypeDef SPITransfer_C_Master_Spi1_Transfer(void *SpiTrans, activeBoard_TypeDef boardID)
 {
 	SPITransfer *sTrans = (SPITransfer *)SpiTrans;
-	return sTrans->Master_Spi1_Transfer(cBoard, boardID);
+	SpiTransStatus_TypeDef ststate = sTrans->Master_Spi1_Transfer((uint8_t)boardID);
+	delete sTrans;
+	return ststate;
 }
+
 
 //#endif // not (defined(MBED_H) || defined(__SAM3X8E__))
 

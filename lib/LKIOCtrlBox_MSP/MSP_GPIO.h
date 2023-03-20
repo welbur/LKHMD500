@@ -6,7 +6,8 @@
 #endif
 
 #include "stm32f4xx_hal.h"
-#include "SlaveBoardConfig.h"
+//#include "SlaveBoardConfig.h"
+#include "SPITransfer_C.h"
 #include <stdio.h>
 
 #ifdef DEVBoard
@@ -74,6 +75,8 @@ typedef enum
   MENU_Board    = 0b10000000,	//128     
 }activeBoard_TypeDef;
 */
+
+extern SlaveBoardStatus_TypeDef SlaveBoardStatus;
 
 void MX_GPIO_Init(void);
 

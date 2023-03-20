@@ -1,13 +1,13 @@
 {
 	"folders": [
 		{
-			"path": "../Modbus-STM32-HAL-FreeRTOS-master"
-		},
-		{
 			"path": "."
 		},
 		{
 			"path": "../../../../stm32project/DEVBoard_FreeRTOS_V2"
+		},
+		{
+			"path": "../DIBoard"
 		}
 	],
 	"settings": {

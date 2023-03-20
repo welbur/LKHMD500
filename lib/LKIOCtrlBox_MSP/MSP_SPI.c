@@ -271,7 +271,9 @@ uint8_t MSP_SPI_read(SPI_HandleTypeDef* spiHandle, uint8_t cs, uint8_t *rxData, 
     if(HAL_SPI_Receive(spiHandle, (rxData+i), 1, 10) != HAL_OK) return 0;
     while(HAL_SPI_GetState(spiHandle) != HAL_SPI_STATE_READY) {}
     SPI1_CS_DISABLE(cs);    //关闭当前触发的板子的cs信号
+    
   }
+  //printf("spi read :  %d, ", rxData[0]);
   return 1;
 }
 

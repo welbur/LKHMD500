@@ -38,7 +38,7 @@ extern "C" {
 #include "MSP_SPI.h"
 #include "SPITransfer_C.h"
 #include "stdio.h"
-#include "SlaveBoardConfig.h"
+//#include "SlaveBoardConfig.h"
 
 #include "Modbus.h"
 #include "cmsis_os.h"
@@ -129,15 +129,18 @@ typedef __I uint32_t vuc32;
 typedef __I uint16_t vuc16; 
 typedef __I uint8_t vuc8;  
 
+/*
 typedef struct
 {
   SpiTransStatus_TypeDef    sTransState[sTransBoard_Max];
   activeBoard_TypeDef       activeBoard;
 
 }SlaveBoardStatus_TypeDef;
+*/
 
 extern modbusHandler_t ModbusH;
 extern uint16_t ModbusDATA[128];
+extern SlaveBoardStatus_TypeDef SlaveBoardStatus;
 
 #ifdef __cplusplus
 }

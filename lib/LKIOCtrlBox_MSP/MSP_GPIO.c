@@ -169,19 +169,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   switch (GPIO_Pin) 
   {
     case KEY_Pin:
-      Enable_Board(DI_Board_1);
-      Enable_Board(DQ_Board_1);
-      printf("DEV button........%d\r\n", isBoard_Enable(DI_Board_1));
+      SlaveBoardStatus.activeBoard |= DI_Board_1|DI_Board_2|DI_Board_3|DI_Board_4|DQ_Board_1;
+      //Enable_Board(DI_Board_1);
+      //Enable_Board(DQ_Board_1);
+      printf("DEV button........%d\r\n", SlaveBoardStatus.activeBoard);
       break;
 #if DEVBoard
     case DIB_INT_PIN1:
-      Enable_Board(DI_Board_1);
-      printf("di board 1 int pin........%d\r\n", isBoard_Enable(DI_Board_1));
+      SlaveBoardStatus.activeBoard |= DI_Board_1;
+      //printf("di board 1 int pin........%d\r\n", SlaveBoardStatus.activeBoard);
       break;
 #endif
     case DQB_INT_PIN1:
-      Enable_Board(DQ_Board_1);
-      printf("DQ board 1 int pin........%d\r\n", isBoard_Enable(DQ_Board_1));
+      SlaveBoardStatus.activeBoard |= DQ_Board_1;
+      printf("DQ board 1 int pin........%d\r\n", SlaveBoardStatus.activeBoard);
       break;
     default:
       printf("int gpio pin not found!");
