@@ -87,7 +87,11 @@ void EXTI0_IRQHandler(void)
   */
 void EXTI3_IRQHandler(void)
 {
+#ifdef DEVBoard
   HAL_GPIO_EXTI_IRQHandler(DIB_INT_PIN1);
+#else
+  HAL_GPIO_EXTI_IRQHandler(KEY_Pin);
+#endif
 }
 /**
   * @brief  This function handles External line 4 interrupt request.
@@ -96,8 +100,7 @@ void EXTI3_IRQHandler(void)
   */
 void EXTI4_IRQHandler(void)
 {
-  printf("exti4 irq\r\n");
-
+  HAL_GPIO_EXTI_IRQHandler(DIB_INT_PIN2);
 }
 
 /**
@@ -112,7 +115,11 @@ void EXTI9_5_IRQHandler(void)
   */
 void EXTI15_10_IRQHandler(void)
 {
+#ifdef DEVBoardYD
+  HAL_GPIO_EXTI_IRQHandler(DIB_INT_PIN1);
+#else
   HAL_GPIO_EXTI_IRQHandler(KEY_Pin);
+#endif
 }
 
 /**

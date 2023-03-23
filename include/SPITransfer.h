@@ -21,7 +21,7 @@ class SPITransfer
 	uint8_t SPI_MASTER_ACK 		= 0xAC;
 	uint8_t SPI_Trans_END 		= 0xED;
 #if 1
-	SPITransfer(SPI_HandleTypeDef *theSPI = &hspi1, uint8_t cs = null, bool master = true);
+	SPITransfer(SlaveBoardHandler_t *slavebH, SPI_HandleTypeDef *theSPI = &hspi1, bool master = true);
 	//SPITransfer(bool _debug) {begin(_debug);}
 #endif
 
@@ -38,8 +38,8 @@ class SPITransfer
 	bool Master_readACKfrom_Slave(uint8_t cs = null);
 	bool Master_writeENDto_Slave(uint8_t cs = null);
 	uint8_t Master_writeCMDto_Slave_withPacket(const uint16_t& messageLen, const uint8_t boardID = null);		//uint8_t writeWithPacket(const uint16_t& messageLen, const uint8_t packetID = 0);
-	SpiTransStatus_TypeDef Master_readDATAfrom_Slave_withPacket(uint8_t cs = null);
-	SpiTransStatus_TypeDef Master_Spi1_Transfer(const uint8_t boardID = null);		//uint8_t readWithPacket();
+	void Master_readDATAfrom_Slave_withPacket(uint8_t cs = null);
+	void Master_Spi1_Transfer(const uint8_t boardID = null);		//uint8_t readWithPacket();
 	uint8_t currentPacketID();
 	void    reset();
 	
@@ -123,6 +123,7 @@ class SPITransfer
 
 //	uint8_t spiRxData[spiRxDataLen];		//打印测试信息用
 
+	SlaveBoardHandler_t *_slavebH;
 	uint8_t _master, _cs;
 
 	uint8_t spiTxRx_reRunTimes = 3;			//spi发送或接收的重复次数

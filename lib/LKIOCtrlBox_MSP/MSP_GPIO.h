@@ -76,11 +76,11 @@ typedef enum
 }activeBoard_TypeDef;
 */
 
-extern SlaveBoardStatus_TypeDef SlaveBoardStatus;
+//extern SlaveBoardStatus_TypeDef SlaveBoardStatus;
 
 void MX_GPIO_Init(void);
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
+//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 
 void EXTILine_Config(void);
 

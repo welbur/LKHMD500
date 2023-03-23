@@ -1507,6 +1507,86 @@ void buildException( uint8_t u8exception, modbusHandler_t *modH )
 extern uint8_t CDC_Transmit_FS(uint8_t* Buf, uint16_t Len);
 #endif
 
+
+/**
+ * @brief
+ * This method transmits u8Buffer(read from spi trans) to Serial line.
+ * Only if u8txenpin != 0, there is a flow handling in order to keep
+ * the RS485 transceiver in output state as long as the message is being sent.
+ * This is done with TC bit.
+ * The CRC is appended to the buffer before starting to send it.
+ *
+ * @return nothing
+ * @ingroup modH Modbus handler
+ */
+void spiRxUartTxBuffer(modbusHandler_t *modH)
+{
+    // append CRC to message
+
+	uint16_t u16crc = calcCRC(modH->spiRx_uartTx_u8regs, modH->spiRx_uartTx_u8regs_size);
+	//printf(" crc16 : %04X\r\n", u16crc);
+    modH->spiRx_uartTx_u8regs[ modH->spiRx_uartTx_u8regs_size ] = u16crc >> 8;
+    modH->spiRx_uartTx_u8regs_size++;
+    modH->spiRx_uartTx_u8regs[ modH->spiRx_uartTx_u8regs_size ] = u16crc & 0x00ff;
+    modH->spiRx_uartTx_u8regs_size++;
+	printf("spiRx_uartTx_u8regs data : ");
+  	for (int j = 0 ; j < modH->spiRx_uartTx_u8regs_size ; j++) {
+		printf("%02X ", modH->spiRx_uartTx_u8regs[j]);
+  	}
+  	printf(".......%d\r\n", modH->spiRx_uartTx_u8regs_size);
+
+    if (modH->EN_Port != NULL)
+    {
+    	//enable transmitter, disable receiver to avoid echo on RS485 transceivers
+    	HAL_HalfDuplex_EnableTransmitter(modH->port);
+		HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_SET);
+    }
+
+#if ENABLE_USART_DMA ==1
+    if(modH->xTypeHW == USART_HW)
+	{
+#endif
+    	// transfer buffer to serial line IT
+    	HAL_UART_Transmit_IT(modH->port, modH->spiRx_uartTx_u8regs,  modH->spiRx_uartTx_u8regs_size);
+
+#if ENABLE_USART_DMA ==1
+    }
+    else
+    {
+        //transfer buffer to serial line DMA
+    	HAL_UART_Transmit_DMA(modH->port, modH->spiRx_uartTx_u8regs, modH->spiRx_uartTx_u8regs_size);
+    }
+#endif
+
+    ulTaskNotifyTake(pdTRUE, 250); //wait notification from TXE interrupt
+/*
+* If you are porting the library to a different MCU check the 
+* USART datasheet and add the corresponding family in the following
+* preprocessor conditions
+*/
+    // F429, F103, L152 ...
+	while((modH->port->Instance->SR & USART_SR_TC) ==0 )
+    {
+        //block the task until the the last byte is send out of the shifting buffer in USART
+    }
+    if (modH->EN_Port != NULL)
+    {
+        //return RS485 transceiver to receive mode
+    	HAL_GPIO_WritePin(modH->EN_Port, modH->EN_Pin, GPIO_PIN_RESET);
+        //enable receiver, disable transmitter
+        HAL_HalfDuplex_EnableReceiver(modH->port);
+    }
+    // set timeout for master query
+    if(modH->uModbusType == MB_MASTER )
+    {
+        xTimerReset(modH->xTimerTimeout,0);
+    }
+    modH->spiRx_uartTx_u8regs_size = 0;
+    // increase message counter
+//    modH->u16OutCnt++;
+}
+
+
 /**
  * @brief
  * This method transmits u8Buffer to Serial line.

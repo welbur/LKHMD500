@@ -38,6 +38,7 @@ extern "C" {
 #include "MSP_SPI.h"
 #include "SPITransfer_C.h"
 #include "stdio.h"
+#include "SlaveBoard.h"
 //#include "SlaveBoardConfig.h"
 
 #include "Modbus.h"
@@ -140,7 +141,8 @@ typedef struct
 
 extern modbusHandler_t ModbusH;
 extern uint16_t ModbusDATA[128];
-extern SlaveBoardStatus_TypeDef SlaveBoardStatus;
+extern SlaveBoardHandler_t SlaveBoardH[8];
+//extern SlaveBoardHandler_t D_I_1_BoardH, D_I_2_BoardH, D_I_3_BoardH, D_I_4_BoardH, D_Q_1_BoardH, D_Q_2_BoardH, MENU_BoardH, RS485_BoardH;
 
 #ifdef __cplusplus
 }

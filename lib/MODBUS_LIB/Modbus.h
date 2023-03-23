@@ -190,6 +190,9 @@ typedef struct
 	uint8_t dataRX;
 	int8_t i8state;
 
+    uint8_t *spiRx_uartTx_u8regs;          //used by spi trans
+    uint8_t spiRx_uartTx_u8regs_size;
+
 	//FreeRTOS components
 
 	//Queue Modbus Telegram
@@ -268,7 +271,7 @@ extern uint8_t numberHandlers; //global variable to maintain the number of concu
 
 
 
-
+void spiRxUartTxBuffer(modbusHandler_t *modH);
 /* prototypes of the original library not implemented
 
 uint16_t getInCnt(); //!<number of incoming messages

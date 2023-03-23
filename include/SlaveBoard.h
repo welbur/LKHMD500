@@ -1,6 +1,6 @@
 
-#ifndef _SPITRANSFER_C_H_
-#define	_SPITRANSFER_C_H_
+#ifndef _SLAVEBOARD_H_
+#define	_SLAVEBOARD_H_
 
 #ifdef __cplusplus
  extern "C" {
@@ -9,19 +9,22 @@
 #include "stm32f4xx_hal.h"
 #include "FreeRTOS.h"
 #include "task.h"
-#include "SlaveBoard.h"
+#include <string.h>
 
-
-#if 0
 /**
  * @brief 定义第一块DI Board的触发信号 
  * @brief DI Board --> Master Board
  */
+#if DEVBoard
 #define DIB_INT_PIN1                         GPIO_PIN_3
+#define DIB_INT_PIN1_EXTI_IRQn               EXTI3_IRQn    
+#else
+#define DIB_INT_PIN1                         GPIO_PIN_11
+#define DIB_INT_PIN1_EXTI_IRQn               EXTI15_10_IRQn    
+#endif
 #define DIB_INT_PIN1_PORT                    GPIOC
 #define DIB_INT_PIN1_CLK_ENABLE()            __HAL_RCC_GPIOC_CLK_ENABLE()
 #define DIB_INT_PIN1_CLK_DISABLE()           __HAL_RCC_GPIOC_CLK_DISABLE()
-#define DIB_INT_PIN1_EXTI_IRQn               EXTI3_IRQn          
 #define DIB_INT_PIN1_EXTI_SP                 1          
 /**
  * @brief 定义第二块DI Board的触发信号 
@@ -161,12 +164,18 @@
 #define sTxRx_TimeOut                   1
 #define spiRxDataLen                    100
 
-//extern uint8_t DefaultBoardID;
+//复制一个数组到另一个数组
+#define COPY_ARRAY(dest, src, len) memcpy(dest, src, (len) * sizeof((src)[0]))
 // 板ID位操作函数
 //#define Enable_Board(reg, bit)   ((reg) |= (1 << (bit)))
 //#define Disable_Baord(reg, bit) ((reg) &= ~(1 << (bit)))
 #define whichBoard_Enable(reg, bit)  ((reg) & (1 << (bit)))         //(reg & (1 << bit)) >> bit
 //#define TOGGLE_BIT(reg, bit) ((reg) ^= (1 << (bit)))
+#define MOD_START_BYTE                  0x7E
+//#define MOD_CMD_CODE                    0x03
+#define MOD_PREAMBLE_SIZE               4
+extern uint8_t mod_preamble[MOD_PREAMBLE_SIZE];  //   = {MOD_START_BYTE, 0, 0, 0};
+//uint8_t mod_postamble[2] = {0, STOP_BYTE};
 
 typedef enum 
 {
@@ -185,16 +194,16 @@ typedef enum
 
 typedef enum 
 {
-  NO_Board      = 0,
-  DI_Board_1    = 0b00000001,
-  DI_Board_2    = 0b00000010,	//2,
-  DI_Board_3    = 0b00000100,
-  DI_Board_4    = 0b00001000,
-  DQ_Board_1    = 0b00010000,
-  DQ_Board_2    = 0b00100000,
-  RS485_Board   = 0b01000000,	//64,
-  MENU_Board    = 0b10000000,	//128     
-}activeBoard_TypeDef;
+//  NO_Board      = 0,
+  DI_Board_1    = 0,     //= 0b00000001,
+  DI_Board_2    ,     //= 0b00000010,	//2,
+  DI_Board_3    ,     //= 0b00000100,
+  DI_Board_4    ,     //= 0b00001000,
+  DQ_Board_1    ,     //= 0b00010000,
+  DQ_Board_2    ,     //= 0b00100000,
+  RS485_Board   ,     //= 0b01000000,	//64,
+  MENU_Board    ,     //= 0b10000000,	//128     
+}BoardID_TypeDef;
 
 
 typedef enum 
@@ -213,13 +222,31 @@ typedef enum
 
 }slaveBoardRegAddr_TypeDef;
 
+
+/**
+ * @struct D_I_BoardHandler_t
+ * @brief
+ * DI board handler structure
+ * Contains all the variables required for Modbus daemon operation
+ */
 typedef struct
 {
-  SpiTransStatus_TypeDef    sTransState[SlaveBoard_Max];
-  activeBoard_TypeDef       activeBoard;
-  uint8_t                   spiRxData[spiRxDataLen];	
-}SlaveBoardStatus_TypeDef;
+  BoardID_TypeDef           BoardID;
+  uint8_t                   isBoardEnable;
+  SpiTransStatus_TypeDef    spiTransState;
+  uint8_t                   spiRx_uartTx_Buffer[spiRxDataLen];
+  uint8_t                   spiTx_uartRx_Buffer[spiRxDataLen];
 
+  uint8_t                  *spiRx_uartTx_u8regs;
+  uint8_t                  *spiTx_uartRx_u8regs;
+  uint8_t                  spiRx_uartTx_u8regs_size;
+  uint8_t                  spiTx_uartRx_u8regs_size;
+
+  uint16_t                  *spiRx_uartTx_u16regs;
+  uint16_t                  *spiTx_uartRx_u16regs;
+  uint16_t                  spiRx_uartTx_u16regs_size;
+  uint16_t                  spiTx_uartRx_u16regs_size;
+}SlaveBoardHandler_t;
 
 /*  DI Board cmd
  *  cmd 由5个字节组成：boardID + CmdCode + RegAddr + para1 + para2
@@ -233,10 +260,6 @@ typedef struct
 //slaveBoardRegAddr_TypeDef       sBoardRegAddr;
 //slaveBoardPara1_TypeDef         sBoardPara_1;
 //slaveBoardPara2_TypeDef         sBoardPara_2;       //备用
-#endif
-
-extern void *SPITransfer_C_New(SlaveBoardHandler_t *slavebH, SPI_HandleTypeDef *theSPI, uint8_t master);
-extern void SPITransfer_C_Master_Spi1_Transfer(void *SpiTrans, BoardID_TypeDef boardID);
 
 
 #ifdef __cplusplus

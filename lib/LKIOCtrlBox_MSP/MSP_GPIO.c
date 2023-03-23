@@ -43,10 +43,10 @@ void MX_GPIO_Init(void)
 
   /*Configure GPIO pin Output Level 设置LED*/ 
   HAL_GPIO_WritePin(GPIOC, RED_Pin|GREEN_Pin|BLUE_Pin, GPIO_PIN_SET);
-#if 1
+#if DEVBoard
   /*Configure GPIO pin : PtPin */
   GPIO_InitStruct.Pin = KEY_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING; //GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(KEY_GPIO_Port, &GPIO_InitStruct);
 
@@ -58,20 +58,13 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(RED_GPIO_Port, &GPIO_InitStruct);
 #endif
 
-#if 0
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = SPI1_CS_Pin;
+#if DEVBoardYD
+  /*Configure GPIO pins : PCPin PCPin PCPin */
+  GPIO_InitStruct.Pin = RED_Pin|GREEN_Pin|BLUE_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SPI1_CS_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = SPI2_CS_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_PULLUP;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(SPI2_CS_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(RED_GPIO_Port, &GPIO_InitStruct);
 #endif
 }
 #endif
@@ -84,11 +77,22 @@ void MX_GPIO_Init(void)
 void EXTILine_Config(void)
 {
     GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+#if DEVBoardYD
+    KEY_Pin_CLK_ENABLE();
+    GPIO_InitStruct.Pin = KEY_Pin;                                   
+    GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(KEY_GPIO_Port, &GPIO_InitStruct);
+    HAL_GPIO_WritePin(KEY_GPIO_Port, KEY_Pin, 1);
+    HAL_NVIC_SetPriority(KEY_Pin_EXTI_IRQn, 2, 10);
+    HAL_NVIC_EnableIRQ(KEY_Pin_EXTI_IRQn);
+#endif
     /*Configure GPIO pins : PC3 PC4 PC5 PC6 PC7 PC8 PC9 PC10
-     *  PC3～PC10定义为Slave板到Master板的中断信号
+     *  PC3～PC10定义为Slave板到Master板的中断信号 
     */
     /********************************     di board 1 int     *********************************/
-#if 1 
+#if 1
     DIB_INT_PIN1_CLK_ENABLE();
     GPIO_InitStruct.Pin = DIB_INT_PIN1;                                   
     GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
@@ -156,38 +160,7 @@ void EXTILine_Config(void)
     HAL_NVIC_EnableIRQ(MENUB_INT_PIN_EXTI_IRQn);
 }
 
-/**
-  * @brief EXTI line detection callbacks
-  * @param GPIO_Pin: Specifies the pins connected EXTI line
-  * @retval None
-  */
-uint8_t ledr_v = 1, ledb_v = 1;
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-  ledr_v = 1 - ledr_v;
-  ledb_v = 1 - ledb_v;
-  switch (GPIO_Pin) 
-  {
-    case KEY_Pin:
-      SlaveBoardStatus.activeBoard |= DI_Board_1|DI_Board_2|DI_Board_3|DI_Board_4|DQ_Board_1;
-      //Enable_Board(DI_Board_1);
-      //Enable_Board(DQ_Board_1);
-      printf("DEV button........%d\r\n", SlaveBoardStatus.activeBoard);
-      break;
-#if DEVBoard
-    case DIB_INT_PIN1:
-      SlaveBoardStatus.activeBoard |= DI_Board_1;
-      //printf("di board 1 int pin........%d\r\n", SlaveBoardStatus.activeBoard);
-      break;
-#endif
-    case DQB_INT_PIN1:
-      SlaveBoardStatus.activeBoard |= DQ_Board_1;
-      printf("DQ board 1 int pin........%d\r\n", SlaveBoardStatus.activeBoard);
-      break;
-    default:
-      printf("int gpio pin not found!");
-  }
-}
+
 //配置文件在.h文件中
 
 

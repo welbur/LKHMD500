@@ -48,13 +48,14 @@
 modbusHandler_t ModbusH;
 uint16_t ModbusDATA[128];
 
-/*SPITrans相关参数*/
-SlaveBoardStatus_TypeDef SlaveBoardStatus;
-
+/*Slave Board相关参数*/
+SlaveBoardHandler_t D_I_1_BoardH, D_I_2_BoardH, D_I_3_BoardH, D_I_4_BoardH, D_Q_1_BoardH, D_Q_2_BoardH, MENU_BoardH, RS485_BoardH;
+uint8_t DI1_DATA[128], DI2_DATA[128], DI3_DATA[128], DI4_DATA[128], DQ1_DATA[128], DQ2_DATA[128], MENU_DATA[128], RS485_DATA[128];
+SlaveBoardHandler_t SlaveBoardH[8];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
-
+void DI_Board_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /**/
 
@@ -83,9 +84,6 @@ int main(void)
   EXTILine_Config();
   SPITransfer_Init();
 
-  /*Slave板状态 初始化*/
-  SlaveBoardStatus.activeBoard = NO_Board;
-  //SlaveBoardStatus.sTransState = SpiTrans_Wait;
 #if 1
 	/* Modbus 从站初始化Slave initialization */
 	ModbusH.uModbusType = MB_SLAVE;
@@ -109,16 +107,42 @@ int main(void)
 
   printf("start FreeRTOS\r\n");
 
+  /*Slave板状态 初始化*/
+  D_I_1_BoardH.BoardID = DI_Board_1;
+  D_I_1_BoardH.isBoardEnable = 0;
+  D_I_1_BoardH.spiRx_uartTx_u8regs = DI1_DATA;
+  D_I_1_BoardH.spiRx_uartTx_u8regs_size = sizeof(DI1_DATA) / sizeof(DI1_DATA[0]);
+  D_I_1_BoardH.spiTransState = SpiTrans_Wait;
+  SlaveBoardH[DI_Board_1] = D_I_1_BoardH;
+
+  D_I_2_BoardH.BoardID = DI_Board_2;
+  D_I_2_BoardH.isBoardEnable = 0;
+  D_I_2_BoardH.spiRx_uartTx_u8regs = DI2_DATA;
+  D_I_2_BoardH.spiRx_uartTx_u8regs_size = sizeof(DI2_DATA) / sizeof(DI2_DATA[0]);
+  D_I_2_BoardH.spiTransState = SpiTrans_Wait;
+  SlaveBoardH[DI_Board_2] = D_I_2_BoardH;
+
+  D_Q_1_BoardH.BoardID = DQ_Board_1;
+  D_Q_1_BoardH.isBoardEnable = 0;
+  D_Q_1_BoardH.spiRx_uartTx_u8regs = DQ1_DATA;
+  D_Q_1_BoardH.spiRx_uartTx_u8regs_size = sizeof(DQ1_DATA) / sizeof(DQ1_DATA[0]);
+  D_Q_1_BoardH.spiTransState = SpiTrans_Wait;
+  SlaveBoardH[DQ_Board_1] = D_Q_1_BoardH;
+  //SlaveBoardStatus.sTransState = SpiTrans_Wait;
+
   /* Infinite loop */
   osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
   MX_FREERTOS_Init();
+//  DI_Board_Init();
   /* Start scheduler */
   osKernelStart();
 
-  printf("start loop\r\n");
+  
 
   while (1)
   {
+  //  printf("start loop\r\n");
+  //  osDelay(100);
   }
 }
 
@@ -187,6 +211,45 @@ void Error_Handler(void)
   /* USER CODE BEGIN Error_Handler_Debug */
   printf("error handler!\r\n");
   /* USER CODE END Error_Handler_Debug */
+}
+
+/**
+  * @brief EXTI line detection callbacks
+  * @param GPIO_Pin: Specifies the pins connected EXTI line
+  * @retval None
+  */
+uint8_t ledg_v = 0;
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  switch (GPIO_Pin) 
+  {
+    case KEY_Pin:
+//      SlaveBoardH[DI_Board_1].isBoardEnable = 1;
+//      SlaveBoardH[DI_Board_2].isBoardEnable = 1;
+//      SlaveBoardH[DI_Board_3].isBoardEnable = 1;
+//      SlaveBoardH[DI_Board_4].isBoardEnable = 1;
+//      SlaveBoardH[DQ_Board_1].isBoardEnable = 1;
+      printf("DEV button........\r\n");
+      ledg_v = 1 - ledg_v;
+      LED_R(ledg_v);
+      //osDelay(1000);
+      break;
+#if 1 //DEVBoard
+    case DIB_INT_PIN1:
+      SlaveBoardH[DI_Board_1].isBoardEnable = 1;//D_I_1_BoardH.isBoardEnable = 1;
+      printf("di board 1 int pin........%d\r\n", SlaveBoardH[DI_Board_1].isBoardEnable);
+      break;
+#endif
+    case DIB_INT_PIN2:
+      SlaveBoardH[DI_Board_2].isBoardEnable = 1;
+      break;
+    case DQB_INT_PIN1:
+      SlaveBoardH[DQ_Board_1].isBoardEnable = 1;
+      //printf("DQ board 1 int pin........%d\r\n", SlaveBoardStatus.activeBoard);
+      break;
+    default:
+      printf("int gpio pin not found!");
+  }
 }
 
 /**
