@@ -38,12 +38,15 @@ extern "C" {
 #include "MSP_SPI.h"
 #include "SPITransfer_C.h"
 #include "stdio.h"
-#include "SlaveBoard.h"
-//#include "SlaveBoardConfig.h"
-
-#include "Modbus.h"
+#include "SlaveBoardConfig.h"
+#ifdef RTOS_enable
 #include "cmsis_os.h"
+#endif
 #include "dma.h"
+#ifdef RS485_Board
+#include "Modbus.h"
+#endif
+
 //#include "tftlcd.h"
 //#include "w25qxx.h"
 /* USER CODE END Includes */
@@ -67,30 +70,6 @@ extern "C" {
 void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
-#if 0
-#define KEY_Pin GPIO_PIN_13
-#define KEY_GPIO_Port GPIOC
-
-#define RED_Pin GPIO_PIN_0
-#define RED_GPIO_Port GPIOC
-#define GREEN_Pin GPIO_PIN_1
-#define GREEN_GPIO_Port GPIOC
-#define BLUE_Pin GPIO_PIN_2
-#define BLUE_GPIO_Port GPIOC
-
-#define LCD_DC_Pin GPIO_PIN_4
-#define LCD_DC_GPIO_Port GPIOB
-#define LCD_RST_Pin GPIO_PIN_6
-#define LCD_RST_GPIO_Port GPIOB
-#define LCD_PWR_Pin GPIO_PIN_7
-#define LCD_PWR_GPIO_Port GPIOB
-#endif
-
-#define USEDGPIOx_CLK_ENABLE(__INDEX__)     do{if((__INDEX__) == 0) KEY_Pin_CLK_ENABLE(); else \
-                                               if((__INDEX__) == 1) DIB_INT_PIN1_CLK_ENABLE(); else \
-                                               if((__INDEX__) == 2) DIB_INT_PIN2_CLK_ENABLE(); \
-                                                 }while(0)
-
 
 // 位操作函数
 //#define SET_BIT(reg, bit)   ((reg) |= (1 << (bit)))
@@ -130,19 +109,16 @@ typedef __I uint32_t vuc32;
 typedef __I uint16_t vuc16; 
 typedef __I uint8_t vuc8;  
 
-/*
-typedef struct
-{
-  SpiTransStatus_TypeDef    sTransState[sTransBoard_Max];
-  activeBoard_TypeDef       activeBoard;
+extern uint8_t testi;
 
-}SlaveBoardStatus_TypeDef;
-*/
-
+#ifdef RS485_Board
 extern modbusHandler_t ModbusH;
 extern uint16_t ModbusDATA[128];
-extern SlaveBoardHandler_t SlaveBoardH[8];
-//extern SlaveBoardHandler_t D_I_1_BoardH, D_I_2_BoardH, D_I_3_BoardH, D_I_4_BoardH, D_Q_1_BoardH, D_Q_2_BoardH, MENU_BoardH, RS485_BoardH;
+#endif
+#if defined(D_I_Board) || defined(D_Q_Board)
+extern CHIPHandler_t CHIPH[4];
+#endif
+
 
 #ifdef __cplusplus
 }

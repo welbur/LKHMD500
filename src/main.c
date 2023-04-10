@@ -42,20 +42,22 @@
   #define PUTCHAR_PROTOTYPE int fputc(int ch, FILE *f)
 #endif /* __GNUC__ */
 #endif
-
-
+uint8_t testi;
+#ifdef RS485_Board
 /*modbus相关参数*/
 modbusHandler_t ModbusH;
 uint16_t ModbusDATA[128];
+#endif
 
+#if defined(D_I_Board) || defined(D_Q_Board)
 /*Slave Board相关参数*/
-SlaveBoardHandler_t D_I_1_BoardH, D_I_2_BoardH, D_I_3_BoardH, D_I_4_BoardH, D_Q_1_BoardH, D_Q_2_BoardH, MENU_BoardH, RS485_BoardH;
-uint8_t DI1_DATA[128], DI2_DATA[128], DI3_DATA[128], DI4_DATA[128], DQ1_DATA[128], DQ2_DATA[128], MENU_DATA[128], RS485_DATA[128];
-SlaveBoardHandler_t SlaveBoardH[8];
+CHIPHandler_t CHIP_1_H, CHIP_2_H, CHIP_3_H, CHIP_4_H;
+uint8_t CHIP_1_DATA[128], CHIP_2_DATA[128], CHIP_3_DATA[128], CHIP_4_DATA[128];
+CHIPHandler_t CHIPH[4];
+#endif
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 void MX_FREERTOS_Init(void);
-void DI_Board_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /**/
 
@@ -75,16 +77,17 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_DMA_Init();
-  MX_SPI1_Init();
   MX_USART1_UART_Init();
   MX_USART2_UART_Init();
+  MX_DMA_Init();
+  MX_SPI1_Init();
   MX_SPI2_Init();
 
-  EXTILine_Config();
+  
+
   SPITransfer_Init();
 
-#if 1
+#ifdef RS485_Board
 	/* Modbus 从站初始化Slave initialization */
 	ModbusH.uModbusType = MB_SLAVE;
 	ModbusH.port = &huart2;
@@ -97,39 +100,54 @@ int main(void)
 	ModbusH.u16regs = ModbusDATA;
 	ModbusH.u16regsize = sizeof(ModbusDATA) / sizeof(ModbusDATA[0]);
 	ModbusH.xTypeHW = USART_HW_DMA;
-#endif
-  printf("start modbus...\r\n");
+  printf("start modbus rtu master...\r\n");
 	// Initialize Modbus library
 	ModbusInit(&ModbusH);
 	// Start capturing traffic on serial Port
 	ModbusStart(&ModbusH);
 	/***********/
+#endif
 
-  printf("start FreeRTOS\r\n");
+#if defined(D_I_Board) || defined(D_Q_Board)
+  /*chip状态 初始化*/
+  CHIP_1_H.DChipID = D_I_Q_Chip_1;
+  CHIP_1_H.isChipEnable = 0;
+  CHIP_1_H.spi1Rx_spi2Tx_u8regs = CHIP_1_DATA;
+  CHIP_1_H.spi1Rx_spi2Tx_u8regs_size = sizeof(CHIP_1_DATA) / sizeof(CHIP_1_DATA[0]);
+  CHIP_1_H.spiTransState = SpiTrans_Wait;
+  CHIPH[D_I_Q_Chip_1] = CHIP_1_H;
 
-  /*Slave板状态 初始化*/
-  D_I_1_BoardH.BoardID = DI_Board_1;
-  D_I_1_BoardH.isBoardEnable = 0;
-  D_I_1_BoardH.spiRx_uartTx_u8regs = DI1_DATA;
-  D_I_1_BoardH.spiRx_uartTx_u8regs_size = sizeof(DI1_DATA) / sizeof(DI1_DATA[0]);
-  D_I_1_BoardH.spiTransState = SpiTrans_Wait;
-  SlaveBoardH[DI_Board_1] = D_I_1_BoardH;
+  CHIP_2_H.DChipID = D_I_Q_Chip_2;
+  CHIP_2_H.isChipEnable = 0;
+  CHIP_2_H.spi1Rx_spi2Tx_u8regs = CHIP_2_DATA;
+  CHIP_2_H.spi1Rx_spi2Tx_u8regs_size = sizeof(CHIP_2_DATA) / sizeof(CHIP_2_DATA[0]);
+  CHIP_2_H.spiTransState = SpiTrans_Wait;
+  CHIPH[D_I_Q_Chip_2] = CHIP_2_H;
 
-  D_I_2_BoardH.BoardID = DI_Board_2;
-  D_I_2_BoardH.isBoardEnable = 0;
-  D_I_2_BoardH.spiRx_uartTx_u8regs = DI2_DATA;
-  D_I_2_BoardH.spiRx_uartTx_u8regs_size = sizeof(DI2_DATA) / sizeof(DI2_DATA[0]);
-  D_I_2_BoardH.spiTransState = SpiTrans_Wait;
-  SlaveBoardH[DI_Board_2] = D_I_2_BoardH;
+  CHIP_3_H.DChipID = D_I_Q_Chip_3;
+  CHIP_3_H.isChipEnable = 0;
+  CHIP_3_H.spi1Rx_spi2Tx_u8regs = CHIP_3_DATA;
+  CHIP_3_H.spi1Rx_spi2Tx_u8regs_size = sizeof(CHIP_3_DATA) / sizeof(CHIP_3_DATA[0]);
+  CHIP_3_H.spiTransState = SpiTrans_Wait;
+  CHIPH[D_I_Q_Chip_3] = CHIP_3_H;
 
-  D_Q_1_BoardH.BoardID = DQ_Board_1;
-  D_Q_1_BoardH.isBoardEnable = 0;
-  D_Q_1_BoardH.spiRx_uartTx_u8regs = DQ1_DATA;
-  D_Q_1_BoardH.spiRx_uartTx_u8regs_size = sizeof(DQ1_DATA) / sizeof(DQ1_DATA[0]);
-  D_Q_1_BoardH.spiTransState = SpiTrans_Wait;
-  SlaveBoardH[DQ_Board_1] = D_Q_1_BoardH;
-  //SlaveBoardStatus.sTransState = SpiTrans_Wait;
+  CHIP_4_H.DChipID = D_I_Q_Chip_4;
+  CHIP_4_H.isChipEnable = 0;
+  CHIP_4_H.spi1Rx_spi2Tx_u8regs = CHIP_4_DATA;
+  CHIP_4_H.spi1Rx_spi2Tx_u8regs_size = sizeof(CHIP_4_DATA) / sizeof(CHIP_4_DATA[0]);
+  CHIP_4_H.spiTransState = SpiTrans_Wait;
+  CHIPH[D_I_Q_Chip_4] = CHIP_4_H;
 
+#endif
+  TrigINT_ToMasterB(0);
+#if 0
+  uint8_t txbuf =0, rxbuf;
+  if(HAL_SPI_TransmitReceive_IT(&hspi2, &txbuf, &rxbuf, 1) != HAL_OK) {printf("spi MSP_SPI_read timeout....\r\n");}
+  //if(HAL_SPI_TransmitReceive(&hspi2, &txbuf, &rxbuf, 1, 100) != HAL_OK) {printf("spi MSP_SPI_read timeout....\r\n");}
+  //if(HAL_SPI_Transmit(&hspi2, &txbuf , 1, 100) != HAL_OK) {printf("spi MSP_SPI_read timeout....\r\n");}
+  while(HAL_SPI_GetState(&hspi2) != HAL_SPI_STATE_READY) {}
+  printf("end spi transmit receive .......%d\r\n", rxbuf);
+#endif
   /* Infinite loop */
   osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
   MX_FREERTOS_Init();
@@ -138,11 +156,8 @@ int main(void)
   osKernelStart();
 
   
-
   while (1)
   {
-  //  printf("start loop\r\n");
-  //  osDelay(100);
   }
 }
 
@@ -229,23 +244,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 //      SlaveBoardH[DI_Board_3].isBoardEnable = 1;
 //      SlaveBoardH[DI_Board_4].isBoardEnable = 1;
 //      SlaveBoardH[DQ_Board_1].isBoardEnable = 1;
+      CHIPH[D_I_Q_Chip_1].isChipEnable = 1;
+//      CHIPH[D_I_Q_Chip_2].isChipEnable = 1;
+//      CHIPH[D_I_Q_Chip_3].isChipEnable = 1;
+//      CHIPH[D_I_Q_Chip_4].isChipEnable = 1;
       printf("DEV button........\r\n");
+      testi = 0;
       ledg_v = 1 - ledg_v;
       LED_R(ledg_v);
       //osDelay(1000);
-      break;
-#if 1 //DEVBoard
-    case DIB_INT_PIN1:
-      SlaveBoardH[DI_Board_1].isBoardEnable = 1;//D_I_1_BoardH.isBoardEnable = 1;
-      printf("di board 1 int pin........%d\r\n", SlaveBoardH[DI_Board_1].isBoardEnable);
-      break;
-#endif
-    case DIB_INT_PIN2:
-      SlaveBoardH[DI_Board_2].isBoardEnable = 1;
-      break;
-    case DQB_INT_PIN1:
-      SlaveBoardH[DQ_Board_1].isBoardEnable = 1;
-      //printf("DQ board 1 int pin........%d\r\n", SlaveBoardStatus.activeBoard);
       break;
     default:
       printf("int gpio pin not found!");

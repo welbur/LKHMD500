@@ -7,9 +7,11 @@
 #endif
 
 #include "stm32f4xx_hal.h"
+#if RTOS_enable
 #include "FreeRTOS.h"
 #include "task.h"
-#include "SlaveBoard.h"
+#endif
+#include "SlaveBoardConfig.h"
 
 
 #if 0
@@ -235,9 +237,9 @@ typedef struct
 //slaveBoardPara2_TypeDef         sBoardPara_2;       //备用
 #endif
 
-extern void *SPITransfer_C_New(SlaveBoardHandler_t *slavebH, SPI_HandleTypeDef *theSPI, uint8_t master);
-extern void SPITransfer_C_Master_Spi1_Transfer(void *SpiTrans, BoardID_TypeDef boardID);
-
+extern void *SPITransfer_C_New(CHIPHandler_t *chipH, SPI_HandleTypeDef *theSPI, uint8_t master);
+//extern void SPITransfer_C_Master_Spi1_Transfer(void *SpiTrans, DChipID_TypeDef chipID);
+extern void SPITransfer_C_Slave_Spi2_Transfer(void *SpiTrans, DChipID_TypeDef chipID);
 
 #ifdef __cplusplus
 }

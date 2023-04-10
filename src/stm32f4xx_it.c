@@ -93,6 +93,8 @@ void EXTI3_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(KEY_Pin);
 #endif
 }
+
+#if 0
 /**
   * @brief  This function handles External line 4 interrupt request.
   * @param  None
@@ -121,6 +123,7 @@ void EXTI15_10_IRQHandler(void)
   HAL_GPIO_EXTI_IRQHandler(KEY_Pin);
 #endif
 }
+#endif
 
 /**
   * @brief This function handles Non maskable interrupt.
@@ -220,16 +223,6 @@ void SysTick_Handler(void)
   /* USER CODE END SysTick_IRQn 0 */
   HAL_IncTick();
   /* USER CODE BEGIN SysTick_IRQn 1 */
-#if 0
-#if (INCLUDE_xTaskGetSchedulerState == 1 )
-  if (xTaskGetSchedulerState() != taskSCHEDULER_NOT_STARTED)
-  {
-#endif /* INCLUDE_xTaskGetSchedulerState */
-  xPortSysTickHandler();
-#if (INCLUDE_xTaskGetSchedulerState == 1 )
-  }
-#endif /* INCLUDE_xTaskGetSchedulerState */
-#endif
   /* USER CODE END SysTick_IRQn 1 */
 }
 #endif

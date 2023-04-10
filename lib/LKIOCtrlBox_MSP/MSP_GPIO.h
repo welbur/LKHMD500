@@ -6,8 +6,8 @@
 #endif
 
 #include "stm32f4xx_hal.h"
-//#include "SlaveBoardConfig.h"
-#include "SPITransfer_C.h"
+#include "SlaveBoardConfig.h"
+//#include "SPITransfer_C.h"
 #include <stdio.h>
 
 #ifdef DEVBoard
@@ -60,29 +60,11 @@
 
 #endif
 
-
-/*
-typedef enum 
-{
-  NO_Board      = 0,
-  DI_Board_1    = 0b00000001,
-  DI_Board_2    = 0b00000010,	//2,
-  DI_Board_3    = 0b00000100,
-  DI_Board_4    = 0b00001000,
-  DQ_Board_1    = 0b00010000,
-  DQ_Board_2    = 0b00100000,
-  RS485_Board   = 0b01000000,	//64,
-  MENU_Board    = 0b10000000,	//128     
-}activeBoard_TypeDef;
-*/
-
-//extern SlaveBoardStatus_TypeDef SlaveBoardStatus;
+#define TrigINT_Pin GPIO_PIN_1
+#define TrigINT_GPIO_Port GPIOB
+#define TrigINT_ToMasterB(n)			(n?HAL_GPIO_WritePin(TrigINT_GPIO_Port,TrigINT_Pin,GPIO_PIN_SET):HAL_GPIO_WritePin(TrigINT_GPIO_Port,TrigINT_Pin,GPIO_PIN_RESET))
 
 void MX_GPIO_Init(void);
-
-//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
-
-void EXTILine_Config(void);
 
 #ifdef __cplusplus
 }

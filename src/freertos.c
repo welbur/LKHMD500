@@ -23,6 +23,7 @@
 #include "main.h"
 #include "cmsis_os.h"
 #include "SPITransfer_C.h"
+#include <stdlib.h>
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -53,14 +54,14 @@ uint8_t mod_preamble[MOD_PREAMBLE_SIZE]   = {MOD_START_BYTE, 0, 0, 0};
 osThreadId_t defaultTaskHandle;
 const osThreadAttr_t defaultTask_attributes = {
   .name = "defaultTask",
-  .stack_size = 32 * 4,
+  .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
 #if 1
 /* 1----Definitions for Start Slave Board SPITransTask */
-osThreadId_t DIBoard_TransTaskHandle;
-const osThreadAttr_t DIBoard_TransTask_attributes = {
-  .name = "DIBoard_TransTask",
+osThreadId_t SPI2_TransTaskHandle;
+const osThreadAttr_t SPI2_TransTask_attributes = {
+  .name = "SPI2_TransTask",
   .stack_size = 256 * 4,
   .priority = (osPriority_t) osPriorityBelowNormal1, //osPriorityHigh
 };
@@ -72,6 +73,7 @@ const osThreadAttr_t DIBoard_TransTask_attributes = {
 
 void StartDefaultTask(void *argument);
 void Start_DIBoard_TransTask(void *argument);
+void Start_SPI2_TransTask(void *argument);
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
 /**
@@ -82,6 +84,7 @@ void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 void MX_FREERTOS_Init(void) {
   /* creation of work led Task */
   defaultTaskHandle = osThreadNew(StartDefaultTask, NULL, &defaultTask_attributes);
+  SPI2_TransTaskHandle  = osThreadNew(Start_SPI2_TransTask, NULL, &SPI2_TransTask_attributes);
   /* creation of TaskmyTaskSlave */
 #if 0
   DIBoard_TransTaskHandle  = osThreadNew(Start_DIBoard_TransTask, NULL, &DIBoard_TransTask_attributes);
@@ -125,23 +128,36 @@ void MX_FREERTOS_Init(void) {
 /* USER CODE END Header_StartDefaultTask */
 void StartDefaultTask(void *argument)
 {
-  /* USER CODE BEGIN StartDefaultTask */
-  /* Infinite loop */
-  for(;;)
-  {
-    
-    if (SlaveBoardH[DI_Board_1].isBoardEnable == 1) {
-      LED_G_TogglePin;
-    } else {
-      LED_B_TogglePin;
-    }
-    //HAL_GPIO_TogglePin(GPIOC, GREEN_Pin);
-    //printf(".........................work led task......................\r\n");
-    osDelay(1000);
+  	/* USER CODE BEGIN StartDefaultTask */
+//	uint32_t msTime = HAL_GetTick();
+  	/* Infinite loop */
+  	for(;;)
+  	{
+		uint8_t dtt;
+//		uint32_t msTime = HAL_GetTick();
+		dtt = rand() % 10 + 0;
+//		printf("%d, %ld\r\n", dtt, msTime);
+//		if (HAL_GetTick() - msTime > dtt) {
+			CHIPH[D_I_Q_Chip_1].isChipEnable = 1;
+//			msTime = HAL_GetTick();
+//		}
+		
+//		printf("%d, %d\r\n", dt, CHIPH[D_I_Q_Chip_1].isChipEnable);
+    	if (CHIPH[D_I_Q_Chip_1].isChipEnable == 1) {
+      		LED_G_TogglePin;
+    	} else {
+	      	LED_B_TogglePin;
+    	}
+
+    	//HAL_GPIO_TogglePin(GPIOC, GREEN_Pin);
+    	//printf(".........................work led task......................\r\n");
+    	//dtt += 10;
+		osDelay(1+dtt);
   }
   /* USER CODE END StartDefaultTask */
 }
 
+#if 0
 /****************   1-----DI Board 1     ********************
 * @brief Function implementing the DI Board 1 SpiTrans thread.
 * @param argument: Not used
@@ -197,6 +213,8 @@ void Start_DIBoard_TransTask(void *argument)
     //printf("end di board...\r\n");
   }
 }
+#endif
+
 #if 0
 /****************   1-----DI Board 1     ********************
 * @brief Function implementing the DI Board 1 SpiTrans thread.
@@ -228,6 +246,7 @@ void Start_SlaveBoard_SPITransTask(void *argument)
   }
 }
 #endif
+#if 0
 /****************   2-----DI Board 2     ********************
 * @brief Function implementing the DI Board 2 SpiTrans thread.
 * @param argument: Not used
@@ -247,19 +266,85 @@ void Start_DIB_2_SPITransTask(void *argument)
     osDelay(1000);
   }
 }
+#endif
 /****************   3-----DI Board 3     ********************
 * @brief Function implementing the DI Board 3 SpiTrans thread.
 * @param argument: Not used
 * @retval None
 */
-void Start_DIB_3_SPITransTask(void *argument)
+#if 0
+void Start_SPI2_TransTask(void *argument)
 {
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1000);
-  }
+  uint8_t sTxRxFlag = SpiTxRx_WAIT;
+	/* Infinite loop */
+  	for(;;)
+  	{
+    	if (CHIPH[D_I_Q_Chip_1].isChipEnable == 1) {
+			  TrigINT_ToMasterB(0);
+			  CHIPH[D_I_Q_Chip_1].isChipEnable = 0;
+        uint8_t txbuf = 0, rxData = 0, rxbuf[128];
+        uint32_t msTickstart = HAL_GetTick();
+        TrigINT_ToMasterB(1);
+        rxbuf[0] = 0, rxbuf[1] = 0, rxbuf[2] = 0, rxbuf[3] = 0, rxbuf[4] = 0;
+        //printf("rxbuf : %d", rxbuf[0]);
+        do {
+          if (!HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS)) {//{printf("spi cs2 error....\r\n");continue;}
+            if(HAL_SPI_Receive(&hspi2, rxbuf, 5, 20) != HAL_OK) {
+              printf("spi MSP_SPI_read timeout....\r\n"); 
+              //break;
+            }
+            while(HAL_SPI_GetState(&hspi2) != HAL_SPI_STATE_READY) {}
+            //if(HAL_SPI_Receive(&hspi2, rxbuf, 5, 10) != HAL_OK) {printf("spi MSP_SPI_read timeout....\r\n"); break;}
+            //while(HAL_SPI_GetState(&hspi2) != HAL_SPI_STATE_READY) {}
+            //printf("cscscscs.....\r\n");
+            //if (sTxRxFlag == SpiRx_COMPLETE) {{ printf("SpiRx_COMPLETE  read data\r\n"); break;}}
+            if (HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS)) {printf("spi2 cs is 1. end read data\r\n"); break;}
+            
+          }
+//          if ((HAL_GetTick() - msTickstart) > 10)	{		//sTxRx_TimeOut) {
+//      		  printf("\r\n....spi rx timeout....\r\n");
+//      		  break;
+//    	    }
+    	  }while((HAL_GetTick() - msTickstart) < 50);  //(rxData != 0xAC);
+        printf("msTickstart : %ld\r\n", (HAL_GetTick() - msTickstart));
+        //if (sTxRxFlag == SpiRx_COMPLETE) {
+          printf("rxdata : %02X, %02X, %02X, %02X, %02X\r\n", rxbuf[0], rxbuf[1], rxbuf[2], rxbuf[3], rxbuf[4]);
+        //}
+      }
+    	osDelay(1);
+  	}
 }
+#endif
+#if 1
+
+void Start_SPI2_TransTask(void *argument)
+{
+  	//int dt = 1;
+	/* Infinite loop */
+  	for(;;)
+  	{
+//		printf("write data to master start~~~~~~~~~~~~~~~%ld\r\n", HAL_GetTick());
+//    	if (testi < 10) {
+    	if (CHIPH[D_I_Q_Chip_1].isChipEnable == 1) {
+        	HAL_SPI_MspInit(&hspi2);
+			TrigINT_ToMasterB(1);
+		  	CHIPH[D_I_Q_Chip_1].isChipEnable = 0;
+			TrigINT_ToMasterB(0);
+			LED_R(1);
+        	void *sTrans = SPITransfer_C_New(&CHIPH[D_I_Q_Chip_1], &hspi2, SET_SPIMODE_SLAVE);
+			SPITransfer_C_Slave_Spi2_Transfer(sTrans, CHIPH[D_I_Q_Chip_1].DChipID);
+//    	  	testi++;
+        	//dt = rand() % 10 + 2;  //ranint(10, 100);
+        	/*发送完spi数据后，需要加一条打印指令，要不会报错(因为主控也加了，要去都得去掉)*/
+        	printf("write data to master complete.........%ld\r\n", HAL_GetTick());
+        	HAL_SPI_MspDeInit(&hspi2);
+      	}
+//    	} else CHIPH[D_I_Q_Chip_1].isChipEnable = 0;
+      	LED_R(0);
+      	osDelay(2);
+  	}
+}
+#endif
 /****************   4-----DI Board 4     ********************
 * @brief Function implementing the DI Board 4 SpiTrans thread.
 * @param argument: Not used

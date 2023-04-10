@@ -18,36 +18,11 @@
 
 /* transfer state */
 __IO uint32_t sTxRxFlag;
-//uint32_t wTransferState = TRANSFER_WAIT;
-//#include "spi.h"
 
-/**
-  * @brief          ��װSPI6д����
-  * @param[in]     	data ����������
-  * @retval         �յ�������
-  */
-uint8_t SPI1_WriteData(uint8_t *data,uint16_t size)
-{
-  printf("transmit spi1 data....\r\n");
-	return HAL_SPI_Transmit(&hspi1,data,size, 1000);
-}
+SPI_HandleTypeDef hspi1;  /*主模式，用于读取各类芯片的寄存器数据*/
+SPI_HandleTypeDef hspi2;  /*从模式，用于跟主控板通信*/
 
-/**
-  * @brief          ��װSPI2��д������Ƭ��SPI Flashʹ�ã�
-  * @param[in]     	TxData ����������
-  * @retval         RxData �յ�������
-  */
-uint8_t SPI2_ReadWriteByte(uint8_t TxData)
-{
-    uint8_t Rxdata[5];
-    HAL_SPI_Receive(&hspi2, Rxdata, 5, 1000); 
-    printf("spi2 read data : %d, %d, %d, %d, %d\r\n", Rxdata[0], Rxdata[1], Rxdata[2], Rxdata[3], Rxdata[4]);      
- 	return Rxdata[0];          		    //�����յ�������		
-}
-
-SPI_HandleTypeDef hspi1;
-SPI_HandleTypeDef hspi2;
-
+#if defined(D_I_Board) || defined(D_Q_Board)
 /* SPI1 init function */
 void MX_SPI1_Init(void)
 {
@@ -69,6 +44,7 @@ void MX_SPI1_Init(void)
     //Error_Handler();
   }
 }
+#endif
 /* SPI2 init function */
 void MX_SPI2_Init(void)
 {
@@ -78,22 +54,25 @@ void MX_SPI2_Init(void)
   hspi2.Init.DataSize = SPI_DATASIZE_8BIT;
   hspi2.Init.CLKPolarity = SPI_POLARITY_LOW;                   //SPI_POLARITY_LOW
   hspi2.Init.CLKPhase = SPI_PHASE_1EDGE;                        //SPI_PHASE_1EDGE
-  hspi2.Init.NSS = SPI_NSS_SOFT;
-  hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;       //SPI_BAUDRATEPRESCALER_256
+  hspi2.Init.NSS = SPI_NSS_SOFT;	//SPI_NSS_HARD_INPUT;	//SPI_NSS_SOFT;
+  //hspi2.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;       //SPI_BAUDRATEPRESCALER_256
   hspi2.Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi2.Init.TIMode = SPI_TIMODE_DISABLE;
   hspi2.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
   hspi2.Init.CRCPolynomial = 10;
+
   if (HAL_SPI_Init(&hspi2) != HAL_OK)
   {
-    printf("error spi");
+    printf("error spi\r\n");
     //Error_Handler();
   }
+	printf("end spi2 init\r\n");
 }
 
 void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+#if defined(D_I_Board) || defined(D_Q_Board)
   if(spiHandle->Instance==SPI1)
   {
     /* SPI1 clock enable */
@@ -105,40 +84,44 @@ void HAL_SPI_MspInit(SPI_HandleTypeDef* spiHandle)
     PA6     ------> SPI1_MISO
     PA7     ------> SPI1_MOSI
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7;
+    GPIO_InitStruct.Pin = SPI1_SCK|SPI1_MISO|SPI1_MOSI;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;     //GPIO_PULLUP;     //GPIO_NOPULL
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
     GPIO_InitStruct.Alternate = GPIO_AF5_SPI1;
-    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+    HAL_GPIO_Init(SPI1_Port, &GPIO_InitStruct);
     /* NVIC for SPI */
     HAL_NVIC_SetPriority(SPI1_IRQn, 1, 0);
     HAL_NVIC_EnableIRQ(SPI1_IRQn);
   }
-  else if(spiHandle->Instance==SPI2)
+#endif
+  if(spiHandle->Instance==SPI2)
   {
     /* SPI2 clock enable */
     __HAL_RCC_SPI2_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     /**SPI2 GPIO Configuration
+	  PB12	 ------> SPI2_NSS
     PB13     ------> SPI2_SCK
     PB14     ------> SPI2_MISO
     PB15     ------> SPI2_MOSI
     */
-    GPIO_InitStruct.Pin = GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15;
+    GPIO_InitStruct.Pin = SPI2_SCK|SPI2_MISO|SPI2_MOSI;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_MEDIUM;
     GPIO_InitStruct.Alternate = GPIO_AF5_SPI2;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+    HAL_GPIO_Init(SPI2_Port, &GPIO_InitStruct);
     /* NVIC for SPI */
-    HAL_NVIC_SetPriority(SPI2_IRQn, 1, 0);
+    HAL_NVIC_SetPriority(SPI2_IRQn, 0, 0);
     HAL_NVIC_EnableIRQ(SPI2_IRQn);
+//	printf("spi2 mspinit....\r\n");
   }
 }
 
 void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 {
+#if defined(D_I_Board) || defined(D_Q_Board)
   if(spiHandle->Instance==SPI1)
   {
     /* Peripheral clock disable */
@@ -151,9 +134,10 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
     PA6     ------> SPI1_MISO
     PA7     ------> SPI1_MOSI
     */
-    HAL_GPIO_DeInit(GPIOA, GPIO_PIN_5|GPIO_PIN_6|GPIO_PIN_7);
+    HAL_GPIO_DeInit(SPI1_Port, SPI1_SCK|SPI1_MISO|SPI1_MOSI);
   }
-  else if(spiHandle->Instance==SPI2)
+#endif
+  if(spiHandle->Instance==SPI2)
   {
     /* Peripheral clock disable */
     //__HAL_RCC_SPI2_CLK_DISABLE();
@@ -164,7 +148,7 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
     PB14     ------> SPI2_MISO
     PB15     ------> SPI2_MOSI
     */
-    HAL_GPIO_DeInit(GPIOB, GPIO_PIN_13|GPIO_PIN_14|GPIO_PIN_15);
+    HAL_GPIO_DeInit(SPI2_Port, SPI2_SCK|SPI2_MISO|SPI2_MOSI);
     HAL_NVIC_DisableIRQ(SPI2_IRQn);
   }
 }
@@ -172,59 +156,48 @@ void HAL_SPI_MspDeInit(SPI_HandleTypeDef* spiHandle)
 void SPITransfer_Init(void) 
 {
 /*******************************************       先初始化需要用到的GPIO引脚      *************************************/
+#if defined(D_I_Board) || defined(D_Q_Board)
     GPIO_InitTypeDef GPIO_InitStruct = {0};
-    /*Configure GPIO pins : PB0 PB1 PB2 PB3 PB4 PB5 PB6 PB7 
-     *        PB0~PB7定义为spi1 cs的引脚
+    /*Configure GPIO pins : PB5 PB6 PB7 PB8
+     *        PB5~PB8定义为spi1 cs的引脚
     */
-    SPI1_DIB1_CS_CLK_ENABLE();
-    GPIO_InitStruct.Pin = SPI1_DIB1_CS;
+    SPI1_DChip1_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_DChip1_CS;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
-    HAL_GPIO_Init(SPI1_DIB1_CS_Port, &GPIO_InitStruct);
-    SPI1_DIB2_CS_CLK_ENABLE();
-    GPIO_InitStruct.Pin = SPI1_DIB2_CS;
+    HAL_GPIO_Init(SPI1_DChip1_CS_Port, &GPIO_InitStruct);
+    SPI1_DChip2_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_DChip2_CS;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
-    HAL_GPIO_Init(SPI1_DIB2_CS_Port, &GPIO_InitStruct);
-    SPI1_DIB3_CS_CLK_ENABLE();
-    GPIO_InitStruct.Pin = SPI1_DIB3_CS;
+    HAL_GPIO_Init(SPI1_DChip2_CS_Port, &GPIO_InitStruct);
+    SPI1_DChip3_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_DChip3_CS;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
-    HAL_GPIO_Init(SPI1_DIB3_CS_Port, &GPIO_InitStruct);
-    SPI1_DIB4_CS_CLK_ENABLE();
-    GPIO_InitStruct.Pin = SPI1_DIB4_CS;
+    HAL_GPIO_Init(SPI1_DChip3_CS_Port, &GPIO_InitStruct);
+    SPI1_DChip4_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI1_DChip4_CS;
     GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Pull = GPIO_PULLUP;
-    HAL_GPIO_Init(SPI1_DIB4_CS_Port, &GPIO_InitStruct);
-    SPI1_DQB1_CS_CLK_ENABLE();
-    GPIO_InitStruct.Pin = SPI1_DQB1_CS;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    HAL_GPIO_Init(SPI1_DQB1_CS_Port, &GPIO_InitStruct);
-    SPI1_DQB2_CS_CLK_ENABLE();
-    GPIO_InitStruct.Pin = SPI1_DQB2_CS;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    HAL_GPIO_Init(SPI1_DQB2_CS_Port, &GPIO_InitStruct);
-    SPI1_RS485B_CS_CLK_ENABLE();
-    GPIO_InitStruct.Pin = SPI1_RS485B_CS;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    HAL_GPIO_Init(SPI1_RS485B_CS_Port, &GPIO_InitStruct);
-    SPI1_MENUB_CS_CLK_ENABLE();
-    GPIO_InitStruct.Pin = SPI1_MENUB_CS;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_PULLUP;
-    HAL_GPIO_Init(SPI1_MENUB_CS_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(SPI1_DChip1_CS_Port, &GPIO_InitStruct);
 /*******************************************       将所有cs引脚都默认设为高电平     *************************************/
-    HAL_GPIO_WritePin(SPI1_DIB1_CS_Port,SPI1_DIB1_CS,GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SPI1_DIB2_CS_Port,SPI1_DIB2_CS,GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SPI1_DIB3_CS_Port,SPI1_DIB3_CS,GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SPI1_DIB4_CS_Port,SPI1_DIB4_CS,GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SPI1_DQB1_CS_Port,SPI1_DQB1_CS,GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SPI1_DQB2_CS_Port,SPI1_DQB2_CS,GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SPI1_RS485B_CS_Port,SPI1_RS485B_CS,GPIO_PIN_SET);
-    HAL_GPIO_WritePin(SPI1_MENUB_CS_Port,SPI1_MENUB_CS,GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_DChip1_CS_Port, SPI1_DChip1_CS, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_DChip2_CS_Port, SPI1_DChip2_CS, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_DChip3_CS_Port, SPI1_DChip3_CS, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_DChip4_CS_Port, SPI1_DChip4_CS, GPIO_PIN_SET);
+#endif
+
+#if 1
+	SPI2_CS_CLK_ENABLE();
+    GPIO_InitStruct.Pin = SPI2_CS;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+    HAL_GPIO_Init(SPI2_CS_Port, &GPIO_InitStruct);
+#endif
+//	HAL_GPIO_WritePin(SPI2_CS_Port, SPI2_CS, GPIO_PIN_SET);
+	printf("spi trans init end....\r\n");
 }
 
 /**
@@ -236,23 +209,35 @@ void SPITransfer_Init(void)
   * @note   Master板 通过spi1发送数据给Slave板.
   * @retval 发送成功 返回 1； 发送失败 返回 0
   */
+#if 1
+uint8_t MSP_SPI_write(SPI_HandleTypeDef* spiHandle, uint8_t *txData, uint16_t txLen)
+{
+	for (uint16_t i = 0; i < txLen; i++)
+  	{
+    	if(HAL_SPI_Transmit_IT(spiHandle, (txData+i), 1) != HAL_OK) return 0;
+  	}
+  	return 1;
+}
+#endif
+#if 0
 uint8_t MSP_SPI_write(SPI_HandleTypeDef* spiHandle, uint8_t cs, uint8_t *txData, uint16_t txLen)
 {
   for (uint16_t i = 0; i < txLen; i++)
   {
     uint32_t msTickstart = HAL_GetTick();
-    SPI1_CS_ENABLE(cs);     //将当前触发的板子的cs信号使能
+//	if (spiHandle->Instance==SPI1) SPI1_CS_ENABLE(cs);     //将当前触发的板子的cs信号使能
     if(HAL_SPI_Transmit_IT(spiHandle, (txData+i), 1) != HAL_OK) return 0;
     while(sTxRxFlag != SpiTx_COMPLETE) 
     {
       //if ((HAL_GetTick() - msTickstart) > sTxRx_TimeOut) return 0;
       if ((HAL_GetTick() - msTickstart) > sTxRx_TimeOut) {printf("spi tx timeout....\r\n"); return 0;}
     }
-    SPI1_CS_DISABLE(cs);    //关闭当前触发的板子的cs信号
+//    if (spiHandle->Instance==SPI1) SPI1_CS_DISABLE(cs);    //关闭当前触发的板子的cs信号
     sTxRxFlag = SpiTxRx_WAIT;
   }
   return 1;
 }
+#endif
 
 /**
   * @brief  MSP_SPI_read
@@ -263,20 +248,54 @@ uint8_t MSP_SPI_write(SPI_HandleTypeDef* spiHandle, uint8_t cs, uint8_t *txData,
   * @note   通过spi号接收指定数量的数据.
   * @retval 发送成功 返回 1； 发送失败 返回 0
   */
+#if 0
 uint8_t MSP_SPI_read(SPI_HandleTypeDef* spiHandle, uint8_t cs, uint8_t *rxData, uint16_t rxLen)
 {
+	
   for (uint16_t i = 0; i < rxLen; i++)
   {
-    SPI1_CS_ENABLE(cs);     //将当前触发的板子的cs信号使能
-    if(HAL_SPI_Receive(spiHandle, (rxData+i), 1, 10) != HAL_OK) return 0;
-    while(HAL_SPI_GetState(spiHandle) != HAL_SPI_STATE_READY) {}
-    SPI1_CS_DISABLE(cs);    //关闭当前触发的板子的cs信号
+    //if (spiHandle->Instance==SPI1) SPI1_CS_ENABLE(cs);     //将当前触发的板子的cs信号使能
+    if(HAL_SPI_Receive(spiHandle, (rxData+i), 1, 20) != HAL_OK) return 0;
+    //while(sTxRxFlag != SpiRx_COMPLETE) {}
+	while(HAL_SPI_GetState(spiHandle) != HAL_SPI_STATE_READY) {}
+    //if (spiHandle->Instance==SPI1) SPI1_CS_DISABLE(cs);    //关闭当前触发的板子的cs信号
     
   }
   //printf("spi read :  %d, ", rxData[0]);
   return 1;
 }
+#endif
+#if 1
+uint8_t MSP_SPI_read(SPI_HandleTypeDef* spiHandle, uint8_t *rxData, uint16_t rxLen)
+{
+	for (uint16_t i = 0; i < rxLen; i++) {
+	    if(HAL_SPI_Receive(spiHandle, rxData, 1, 1) != HAL_OK) {
+			//printf("spi MSP_SPI_read timeout....\r\n"); 
+			return 0;
+		}
+  		while(HAL_SPI_GetState(spiHandle) != HAL_SPI_STATE_READY) {}
+	}
+	return 1;
+}
+#endif
+#if 0
+uint8_t MSP_SPI_read(SPI_HandleTypeDef* spiHandle, uint8_t cs, uint8_t *rxData, uint16_t rxLen)
+{
+	uint8_t txbuf = 0;
+  for (uint16_t i = 0; i < rxLen; i++)
+  {
+    if (spiHandle->Instance==SPI1) SPI1_CS_ENABLE(cs);     //将当前触发的板子的cs信号使能
+	printf(" spi2 cs :  %d\r\n", HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS));
+    if(HAL_SPI_TransmitReceive_IT(spiHandle, &txbuf, (rxData+i), 1) != HAL_OK) {printf("spi MSP_SPI_read timeout....\r\n"); return 0;}
 
+    while(HAL_SPI_GetState(spiHandle) != HAL_SPI_STATE_READY) {}
+    if (spiHandle->Instance==SPI1) SPI1_CS_DISABLE(cs);    //关闭当前触发的板子的cs信号
+    
+  }
+  //printf("spi read :  %d, ", rxData[0]);
+  return 1;
+}
+#endif
 /**
   * @brief  TxRx Transfer completed callback.
   * @param  hspi: SPI handle
@@ -284,15 +303,20 @@ uint8_t MSP_SPI_read(SPI_HandleTypeDef* spiHandle, uint8_t cs, uint8_t *rxData, 
   *         you can add your own implementation. 
   * @retval None
   */
-void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
-  printf("spi rx callback\r\n");
+//  printf("spi txrx callback\r\n");
   sTxRxFlag = SpiRx_COMPLETE;
 }
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi)
 {
   //printf("spi tx callback\r\n");
   sTxRxFlag = SpiTx_COMPLETE;
+}
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+  //printf("spi rx callback\r\n");
+  sTxRxFlag = SpiRx_COMPLETE;
 }
 
 /**
