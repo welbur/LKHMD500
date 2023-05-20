@@ -78,7 +78,7 @@ extern TIM_HandleTypeDef htim2;
   */
 void EXTI0_IRQHandler(void)
 {
-  printf("exti0 irq\r\n");
+  //LOGI("exti0 irq\r\n");
 }
 /**
   * @brief  This function handles External line 3 interrupt request.
@@ -241,7 +241,7 @@ void DMA1_Stream5_IRQHandler(void)
 
   /* USER CODE END DMA1_Stream5_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_usart2_rx);
-  //printf("dma1 stream5 rx irq \r\n");
+  //LOGI("dma1 stream5 rx irq \r\n");
   /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
 
   /* USER CODE END DMA1_Stream5_IRQn 1 */
@@ -256,7 +256,7 @@ void DMA1_Stream6_IRQHandler(void)
 
   /* USER CODE END DMA1_Stream6_IRQn 0 */
   HAL_DMA_IRQHandler(&hdma_usart2_tx);
-  //printf("dma1 stream6 tx irq \r\n");
+  //LOGI("dma1 stream6 tx irq \r\n");
   /* USER CODE BEGIN DMA1_Stream6_IRQn 1 */
 
   /* USER CODE END DMA1_Stream6_IRQn 1 */
@@ -299,7 +299,7 @@ void USART2_IRQHandler(void)
 
   /* USER CODE END USART2_IRQn 0 */
   HAL_UART_IRQHandler(&huart2);
-//  printf("usart2 irq \r\n");
+//  LOGI("usart2 irq \r\n");
   /* USER CODE BEGIN USART2_IRQn 1 */
 
   /* USER CODE END USART2_IRQn 1 */
@@ -312,7 +312,7 @@ void USART2_IRQHandler(void)
   */
 void SPI1_IRQHandler(void)
 {
-  //printf("spi2 irq.....\r\n");
+  //LOGI("spi2 irq.....\r\n");
   HAL_SPI_IRQHandler(&hspi1);
 }
 
@@ -323,7 +323,7 @@ void SPI1_IRQHandler(void)
   */
 void SPI2_IRQHandler(void)
 {
-  //printf("spi2 irq.....\r\n");
+  //LOGI("spi2 irq.....\r\n");
   HAL_SPI_IRQHandler(&hspi2);
 }
 

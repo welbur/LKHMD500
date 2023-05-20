@@ -5,6 +5,7 @@
  extern "C" {
 #endif
 
+#include "LOG.h"
 #include "stm32f4xx_hal.h"
 #include "stdio.h"
 //#include "SPITransfer_C.h"
@@ -62,6 +63,7 @@ void SPITransfer_Init(void);
 
 uint8_t MSP_SPI_write(SPI_HandleTypeDef* spiHandle, uint8_t *txData, uint16_t txLen);
 uint8_t MSP_SPI_read(SPI_HandleTypeDef* spiHandle, uint8_t *rxData, uint16_t rxLen);
+uint8_t MSP_SPI2_CS_STATUS();
 
 uint8_t SPI1_WriteData(uint8_t *data,uint16_t size);
 uint8_t SPI2_ReadWriteByte(uint8_t TxData);

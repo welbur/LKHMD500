@@ -698,8 +698,8 @@ void StartTaskModbusSlave(void *argument)
 	  continue;
     }
 
-//	printf("slave id : %d\r\n", modH->u8id);
-//	printf("modH->u8Buffer[ID] : %d\r\n", modH->u8Buffer[ID]);
+//	LOGI("slave id : %d\r\n", modH->u8id);
+//	LOGI("modH->u8Buffer[ID] : %d\r\n", modH->u8Buffer[ID]);
    // check slave id
     if ( modH->u8Buffer[ID] !=  modH->u8id)
 	{
@@ -716,7 +716,7 @@ void StartTaskModbusSlave(void *argument)
 
 	  // validate message: CRC, FCT, address and size
     uint8_t u8exception = validateRequest(modH);
-//	printf("u8exception : %d", u8exception);
+//	LOGI("u8exception : %d", u8exception);
 	if (u8exception > 0)
 	{
 	    if (u8exception != ERR_TIME_OUT)
@@ -1338,7 +1338,7 @@ int16_t getRxBuffer(modbusHandler_t *modH)
 uint8_t validateRequest(modbusHandler_t *modH)
 {
 	// check message crc vs calculated crc
-	//printf("check message crc vs calculated crc \r\n");
+	//LOGI("check message crc vs calculated crc \r\n");
 #if ENABLE_TCP ==1
 	    uint16_t u16MsgCRC;
 		    u16MsgCRC= ((modH->u8Buffer[modH->u8BufferSize - 2] << 8)
@@ -1357,7 +1357,7 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	    u16MsgCRC= ((modH->u8Buffer[modH->u8BufferSize - 2] << 8)
 	    		   	         | modH->u8Buffer[modH->u8BufferSize - 1]); // combine the crc Low & High bytes
 
-		//printf("u16msgcrc : %xd\r\n", u16MsgCRC);
+		//LOGI("u16msgcrc : %xd\r\n", u16MsgCRC);
 	    if ( calcCRC( modH->u8Buffer,  modH->u8BufferSize-2 ) != u16MsgCRC )
 	    {
 	       		modH->u16errCnt ++;
@@ -1386,7 +1386,7 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	    // check start address & nb range
 	    uint16_t u16AdRegs = 0;
 	    uint16_t u16NRegs = 0;
-		//printf("modH->u8Buffer[ FUNC ] : %d\r\n", modH->u8Buffer[ FUNC ]);
+		//LOGI("modH->u8Buffer[ FUNC ] : %d\r\n", modH->u8Buffer[ FUNC ]);
 	    //uint8_t u8regs;
 	    switch ( modH->u8Buffer[ FUNC ] )
 	    {
@@ -1428,7 +1428,7 @@ uint8_t validateRequest(modbusHandler_t *modH)
 	        if ( u16NRegs > 256 ) return EXC_REGS_QUANT;
 	        break;
 	    }
-		//printf("end function....\r\n");
+		//LOGI("end function....\r\n");
 	    return 0; // OK, no exception code thrown
 
 }
@@ -1524,16 +1524,16 @@ void spiRxUartTxBuffer(modbusHandler_t *modH)
     // append CRC to message
 
 	uint16_t u16crc = calcCRC(modH->spiRx_uartTx_u8regs, modH->spiRx_uartTx_u8regs_size);
-	//printf(" crc16 : %04X\r\n", u16crc);
+	//LOGI(" crc16 : %04X\r\n", u16crc);
     modH->spiRx_uartTx_u8regs[ modH->spiRx_uartTx_u8regs_size ] = u16crc >> 8;
     modH->spiRx_uartTx_u8regs_size++;
     modH->spiRx_uartTx_u8regs[ modH->spiRx_uartTx_u8regs_size ] = u16crc & 0x00ff;
     modH->spiRx_uartTx_u8regs_size++;
-	printf("spiRx_uartTx_u8regs data : ");
+	LOGI("spiRx_uartTx_u8regs data : ");
   	for (int j = 0 ; j < modH->spiRx_uartTx_u8regs_size ; j++) {
-		printf("%02X ", modH->spiRx_uartTx_u8regs[j]);
+		LOGI("%02X ", modH->spiRx_uartTx_u8regs[j]);
   	}
-  	printf(".......%d\r\n", modH->spiRx_uartTx_u8regs_size);
+  	LOGI(".......%d\r\n", modH->spiRx_uartTx_u8regs_size);
 
     if (modH->EN_Port != NULL)
     {

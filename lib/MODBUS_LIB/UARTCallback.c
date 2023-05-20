@@ -23,7 +23,7 @@
 
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart)
 {
-	//printf("txcallback\r\n");
+	//LOGI("txcallback\r\n");
 	/* Modbus RTU TX callback BEGIN */
 	BaseType_t xHigherPriorityTaskWoken = pdFALSE;
 	int i;

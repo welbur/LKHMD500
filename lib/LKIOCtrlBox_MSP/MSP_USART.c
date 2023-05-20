@@ -42,7 +42,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 void MX_USART1_UART_Init(void)
 {
   huart1.Instance = USART1;
-  huart1.Init.BaudRate = 115200;
+  huart1.Init.BaudRate = 921600;
   huart1.Init.WordLength = UART_WORDLENGTH_8B;
   huart1.Init.StopBits = UART_STOPBITS_1;
   huart1.Init.Parity = UART_PARITY_NONE;
@@ -51,7 +51,7 @@ void MX_USART1_UART_Init(void)
   huart1.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart1) != HAL_OK)   //初始化串口的引脚定义，在HAL_UART_MspInit函数里面
   {
-    printf("uart init error");
+    LOGE("uart init error");
     //Error_Handler();
   }
 }
@@ -68,7 +68,7 @@ void MX_USART2_UART_Init(void)
   huart2.Init.OverSampling = UART_OVERSAMPLING_16;
   if (HAL_UART_Init(&huart2) != HAL_OK)   //初始化串口的引脚定义，在HAL_UART_MspInit函数里面
   {
-    printf("uart init error");
+    LOGE("uart init error");
     //Error_Handler();
   }
 }
@@ -127,7 +127,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     hdma_usart2_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_usart2_rx) != HAL_OK)
     {
-      printf("uart2 rx dma error");
+      LOGE("uart2 rx dma error");
       //Error_Handler();
     }
     __HAL_LINKDMA(uartHandle,hdmarx,hdma_usart2_rx);
@@ -145,7 +145,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef* uartHandle)
     hdma_usart2_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_usart2_tx) != HAL_OK)
     {
-      printf("uart2 tx dma error");
+      LOGE("uart2 tx dma error");
       //Error_Handler();
     }
     __HAL_LINKDMA(uartHandle,hdmatx,hdma_usart2_tx);

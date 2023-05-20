@@ -239,7 +239,9 @@ typedef struct
 
 extern void *SPITransfer_C_New(CHIPHandler_t *chipH, SPI_HandleTypeDef *theSPI, uint8_t master);
 //extern void SPITransfer_C_Master_Spi1_Transfer(void *SpiTrans, DChipID_TypeDef chipID);
-extern void SPITransfer_C_Slave_Spi2_Transfer(void *SpiTrans, DChipID_TypeDef chipID);
+extern void SPITransfer_C_Slave_Spi2_Transfer(void *SpiTrans, uint8_t TxRxFlag, DChipID_TypeDef chipID);
+extern void SPITransfer_C_Master_Spi1_Transfer(void *SpiTrans, uint8_t TxRxFlag, DChipID_TypeDef chipID);
+
 
 #ifdef __cplusplus
 }

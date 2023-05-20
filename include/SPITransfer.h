@@ -17,9 +17,10 @@ class SPITransfer
 	Packet  packet;
 	uint8_t bytesRead = 0;
 	int8_t  status    = 0;
-	uint8_t SPI_SLAVE_ACK 		= 0x53;
-	uint8_t SPI_MASTER_ACK 		= 0xAC;
-	uint8_t SPI_Trans_END 		= 0xED;
+	uint8_t SPI_SLAVE_ACK 			= 0x53;
+	uint8_t SPI_MASTERRead_ACK 		= 0xAC;
+	uint8_t SPI_MASTERWrite_ACK 	= 0xCA;
+	uint8_t SPI_Trans_END 			= 0xED;
 #if 1
 	SPITransfer(CHIPHandler_t *chipH, SPI_HandleTypeDef *theSPI = &hspi2, bool master = true);
 	//SPITransfer(bool _debug) {begin(_debug);}
@@ -29,13 +30,14 @@ class SPITransfer
 	void    begin(const bool _debug = true);
 	//void 	beginTransaction(void);
 	//void 	endTransaction(void);
-
+	bool Slave_writeSyncto_Master(uint8_t txData);
 	bool Slave_SyncWith_Master(uint8_t rxData);
 	uint8_t Master_writeCMDto_Slave_withPacket(const uint16_t& messageLen, const uint8_t boardID = null);		//uint8_t writeWithPacket(const uint16_t& messageLen, const uint8_t packetID = 0);
 	uint8_t Slave_writeDATAto_Master_withPacket(const uint16_t& messageLen, const uint8_t boardID = null);		//uint8_t writeWithPacket(const uint16_t& messageLen, const uint8_t packetID = 0);
-	void Master_readDATAfrom_Slave_withPacket(uint8_t cs = null);
-	void Master_Spi1_Transfer(const uint8_t boardID = null);		//uint8_t readWithPacket();
-	void Slave_Spi2_Transfer(const uint8_t boardID = null);
+	void Slave_readDATAfrom_Master_withPacket();
+	//void Master_readDATAfrom_Slave_withPacket(uint8_t cs = null);
+	void Master_Spi1_Transfer(const uint8_t TxRxFlag = 0, const uint8_t boardID = null);
+	void Slave_Spi2_Transfer(const uint8_t TxRxFlag = 0, const uint8_t boardID = null);
 	uint8_t currentPacketID();
 	void    reset();
 	

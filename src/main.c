@@ -86,7 +86,9 @@ int main(void)
   
 
   SPITransfer_Init();
-
+  LOGI("Start rtos\r\n");
+  LOGE("Start rtos\r\n");
+  LOGW("Start rtos\r\n");
 #ifdef RS485_Board
 	/* Modbus 从站初始化Slave initialization */
 	ModbusH.uModbusType = MB_SLAVE;
@@ -100,7 +102,7 @@ int main(void)
 	ModbusH.u16regs = ModbusDATA;
 	ModbusH.u16regsize = sizeof(ModbusDATA) / sizeof(ModbusDATA[0]);
 	ModbusH.xTypeHW = USART_HW_DMA;
-  printf("start modbus rtu master...\r\n");
+  LOGI("start modbus rtu master...\r\n");
 	// Initialize Modbus library
 	ModbusInit(&ModbusH);
 	// Start capturing traffic on serial Port
@@ -142,11 +144,11 @@ int main(void)
   TrigINT_ToMasterB(0);
 #if 0
   uint8_t txbuf =0, rxbuf;
-  if(HAL_SPI_TransmitReceive_IT(&hspi2, &txbuf, &rxbuf, 1) != HAL_OK) {printf("spi MSP_SPI_read timeout....\r\n");}
-  //if(HAL_SPI_TransmitReceive(&hspi2, &txbuf, &rxbuf, 1, 100) != HAL_OK) {printf("spi MSP_SPI_read timeout....\r\n");}
-  //if(HAL_SPI_Transmit(&hspi2, &txbuf , 1, 100) != HAL_OK) {printf("spi MSP_SPI_read timeout....\r\n");}
+  if(HAL_SPI_TransmitReceive_IT(&hspi2, &txbuf, &rxbuf, 1) != HAL_OK) {LOGE("spi MSP_SPI_read timeout....\r\n");}
+  //if(HAL_SPI_TransmitReceive(&hspi2, &txbuf, &rxbuf, 1, 100) != HAL_OK) {LOGE("spi MSP_SPI_read timeout....\r\n");}
+  //if(HAL_SPI_Transmit(&hspi2, &txbuf , 1, 100) != HAL_OK) {LOGE("spi MSP_SPI_read timeout....\r\n");}
   while(HAL_SPI_GetState(&hspi2) != HAL_SPI_STATE_READY) {}
-  printf("end spi transmit receive .......%d\r\n", rxbuf);
+  LOGI("end spi transmit receive .......%d\r\n", rxbuf);
 #endif
   /* Infinite loop */
   osKernelInitialize();  /* Call init function for freertos objects (in freertos.c) */
@@ -224,7 +226,7 @@ PUTCHAR_PROTOTYPE
 void Error_Handler(void)
 {
   /* USER CODE BEGIN Error_Handler_Debug */
-  printf("error handler!\r\n");
+  LOGE("error handler!\r\n");
   /* USER CODE END Error_Handler_Debug */
 }
 
@@ -248,14 +250,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 //      CHIPH[D_I_Q_Chip_2].isChipEnable = 1;
 //      CHIPH[D_I_Q_Chip_3].isChipEnable = 1;
 //      CHIPH[D_I_Q_Chip_4].isChipEnable = 1;
-      printf("DEV button........\r\n");
+      LOGI("DEV button........\r\n");
       testi = 0;
       ledg_v = 1 - ledg_v;
       LED_R(ledg_v);
       //osDelay(1000);
       break;
     default:
-      printf("int gpio pin not found!");
+      LOGE("int gpio pin not found!");
   }
 }
 
@@ -292,7 +294,7 @@ void assert_failed(uint8_t *file, uint32_t line)
 {
   /* USER CODE BEGIN 6 */
   /* User can add his own implementation to report the file name and line number,
-     tex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+     tex: LOGE("Wrong parameters value: file %s on line %d\r\n", file, line) */
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */

@@ -46,12 +46,12 @@
 #define SPI1_DChip4_CS_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
 #define SPI1_DChip4_CS_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
 
-#define SPI1_CS_ENABLE(__INDEX__)       do{if((__INDEX__) == D_I_Q_Chip_1)    HAL_GPIO_WritePin(SPI1_DChip1_CS_Port, SPI1_DChip1_CS, GPIO_PIN_RESET); else \
+#define SPI1_CS_LOW(__INDEX__)          do{if((__INDEX__) == D_I_Q_Chip_1)    HAL_GPIO_WritePin(SPI1_DChip1_CS_Port, SPI1_DChip1_CS, GPIO_PIN_RESET); else \
                                            if((__INDEX__) == D_I_Q_Chip_2)    HAL_GPIO_WritePin(SPI1_DChip2_CS_Port, SPI1_DChip2_CS, GPIO_PIN_RESET); else \
                                            if((__INDEX__) == D_I_Q_Chip_3)    HAL_GPIO_WritePin(SPI1_DChip3_CS_Port, SPI1_DChip3_CS, GPIO_PIN_RESET); else \
                                            if((__INDEX__) == D_I_Q_Chip_4)    HAL_GPIO_WritePin(SPI1_DChip4_CS_Port, SPI1_DChip4_CS, GPIO_PIN_RESET);  \
                                         }while(0)
-#define SPI1_CS_DISABLE(__INDEX__)      do{if((__INDEX__) == D_I_Q_Chip_1)    HAL_GPIO_WritePin(SPI1_DChip1_CS_Port, SPI1_DChip1_CS, GPIO_PIN_SET); else \
+#define SPI1_CS_HIGH(__INDEX__)         do{if((__INDEX__) == D_I_Q_Chip_1)    HAL_GPIO_WritePin(SPI1_DChip1_CS_Port, SPI1_DChip1_CS, GPIO_PIN_SET); else \
                                            if((__INDEX__) == D_I_Q_Chip_2)    HAL_GPIO_WritePin(SPI1_DChip2_CS_Port, SPI1_DChip2_CS, GPIO_PIN_SET); else \
                                            if((__INDEX__) == D_I_Q_Chip_3)    HAL_GPIO_WritePin(SPI1_DChip3_CS_Port, SPI1_DChip3_CS, GPIO_PIN_SET); else \
                                            if((__INDEX__) == D_I_Q_Chip_4)    HAL_GPIO_WritePin(SPI1_DChip4_CS_Port, SPI1_DChip4_CS, GPIO_PIN_SET);  \
@@ -69,6 +69,9 @@
 #define sTrans_TimeOut                  100       //5 = 5ms
 #define sTxRx_TimeOut                   1000
 #define spiRxDataLen                    100
+
+#define RxFlag                          1
+#define TxFlag                          2
 
 //复制一个数组到另一个数组
 #define COPY_ARRAY(dest, src, len) memcpy(dest, src, (len) * sizeof((src)[0]))

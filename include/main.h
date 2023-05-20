@@ -32,7 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "LOG.h"
 #include "MSP_GPIO.h"
 #include "MSP_USART.h"
 #include "MSP_SPI.h"
@@ -43,34 +43,21 @@ extern "C" {
 #include "cmsis_os.h"
 #endif
 #include "dma.h"
-#ifdef RS485_Board
-#include "Modbus.h"
+
+#if defined(RS485_Board)
+  #include "Modbus.h"
+#elif defined(D_I_Board)
+  #include "ISO1I813T_DI.h"
+#elif defined(D_Q_Board)
+  #include "ISO2H825V25_DQ.h"
+//#else
+//  #error "Slave Board select error!"
 #endif
-
-//#include "tftlcd.h"
-//#include "w25qxx.h"
-/* USER CODE END Includes */
-
-/* Exported types ------------------------------------------------------------*/
-/* USER CODE BEGIN ET */
-
-/* USER CODE END ET */
-
-/* Exported constants --------------------------------------------------------*/
-/* USER CODE BEGIN EC */
-
-/* USER CODE END EC */
-
-/* Exported macro ------------------------------------------------------------*/
-/* USER CODE BEGIN EM */
-
-/* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
 void Error_Handler(void);
 
 /* Private defines -----------------------------------------------------------*/
-
 // 位操作函数
 //#define SET_BIT(reg, bit)   ((reg) |= (1 << (bit)))
 //#define CLEAR_BIT(reg, bit) ((reg) &= ~(1 << (bit)))

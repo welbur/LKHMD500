@@ -89,6 +89,16 @@ void SPITransfer::endTransaction(void)
 }
 #endif
 
+/**
+  * @brief  Master_writeACKto_Slave
+  * @param  cs: 指向Slave板的cs引脚
+  * @note   Master板 发送同步信号给Slave板.
+  * @retval 发送成功 返回 1； 发送失败 返回 0
+  */
+bool SPITransfer::Slave_writeSyncto_Master(uint8_t txData)
+{
+  	return (bool)MSP_SPI_write(_spi, &txData, 1);
+}
 
 /**
   * @brief  Slave_readACKfrom_Master
@@ -99,26 +109,25 @@ void SPITransfer::endTransaction(void)
 bool SPITransfer::Slave_SyncWith_Master(uint8_t rxData)
 {
   	uint8_t rxack;
-  	uint32_t msTickstart = HAL_GetTick();
+  	uint32_t msTickstart = xTaskGetTickCount();
 	do
   	{
 //		if (!HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS)) {
-			//printf("cs2 = 0 \r\n");
-    		if (!MSP_SPI_read(_spi, &rxack, 1)) {}//{ printf("spi read err \r\n"); }		//{printf("spi read err ...%d\r\n", rxack);}//{ printf("spi read err \r\n"); return false; }
-			//printf("rxack ...%d\r\n", rxack);
+			//LOGI("cs2 = 0 \r\n");
+    		if (!MSP_SPI_read(_spi, &rxack, 1)) {}//{ LOGE("spi read err \r\n"); }		//{LOGE("spi read err ...%d\r\n", rxack);}//{ LOGE("spi read err \r\n"); return false; }
+			//LOGI("rxack ...%d\r\n", rxack);
 			if (rxack == rxData) { 
-//				printf("\r\n read rxack ok... %02X\r\n", rxack); 
+//				LOGI("\r\n read rxack ok... %02X\r\n", rxack); 
 				return true; 
 			}
 			//if (HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS)) {
-			//	printf("spi2 cs is 1. end read data......%d\r\n", rxack); 
-			//	if (rxack == rxData) { printf("\r\n read rxack ok... %02X\r\n", rxack); return true; } 
+			//	LOGI("spi2 cs is 1. end read data......%d\r\n", rxack); 
+			//	if (rxack == rxData) { LOGI("\r\n read rxack ok... %02X\r\n", rxack); return true; } 
 			//	return false;
 			//}
 //		}
-  	}while ((HAL_GetTick() - msTickstart) < 50);		//{0xAC, 0xA0, 0xB0, 0x30, 0xE1};
-	
-	printf("timeout ...msTickstart : %ld\r\n", (HAL_GetTick() - msTickstart));
+  	}while ((xTaskGetTickCount() - msTickstart) < 10);		//{0xAC, 0xA0, 0xB0, 0x30, 0xE1};
+	//LOGE("timeout ...msTickstart : %ld\r\n", (HAL_GetTick() - msTickstart));
   	return false;
 }
 
@@ -147,28 +156,67 @@ uint8_t SPITransfer::Slave_writeDATAto_Master_withPacket(const uint16_t& message
 	return numBytesIncl;
 }
 
+void SPITransfer::Slave_readDATAfrom_Master_withPacket()
+{
+  	uint32_t msTickstart = xTaskGetTickCount();			//HAL_GetTick();
+  	uint8_t recChar = 0xF0;
+	bytesRead = 0;
+	do
+  	{
+		if (!MSP_SPI_read(_spi, &recChar, 1)) {
+			//_slavebH->spiTransState = SpiTrans_Err;
+			//LOGE("read recchar error \r\n");
+			//return;
+		}
+		//LOGI("%d, ", recChar);
+    	bytesRead                					= packet.parse(recChar);
+		status                   					= packet.status;
+		if (status != CONTINUE) {
+      		//LOGI("\r\nstatus : %d, bytesRead : %d\r\n", status, bytesRead);
+			if (status < 0) {
+				reset(); 
+				//_slavebH->spiTransState = SpiTrans_S2M_RxData_Err;
+				return;
+			}   //{sTransState[cBoard] = SpiTrans_S2M_RxData_Err; reset();}
+      		//_slavebH->spiTransState = SpiTrans_S2M_RxData_End;
+			return;                   //sTransState[cBoard] = SpiTrans_S2M_RxData_End;
+		}
+	}while((xTaskGetTickCount() - msTickstart) < sTrans_TimeOut);             //while(recChar != 129); //0xAA);
+#if 0
+  	/* 3------判断是否为超时退出？或者是完成读取数据------------ */
+  	//if (sTransState[cBoard] == SpiTrans_S2M_RxData_End) break;
+  	if ((xTaskGetTickCount() - msTickstart) > sTrans_TimeOut) 
+  	{
+    	LOGE("spi trans timeout\r\n");
+  	}
+#endif
+	//_slavebH->spiTransState = SpiTrans_TimeOut;
+  	return;
+}
+
+
 #if 0
 bool SPITransfer::Slave_readACKfrom_Master(uint8_t cs)
 {
   	uint8_t rxack, rxi = 0;
   	uint32_t msTickstart = HAL_GetTick();
-	//printf(" read rxack  is ... ");
+	//LOGI(" read rxack  is ... ");
 	uint8_t rxbuf[5];
 	
   	//while (!HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS))
 	do
   	{
 		if (!HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS)) {
-    		if (!MSP_SPI_read(_spi, _cs, rxbuf, 5)) {printf("spi read err \r\n");}//{ printf("spi read err \r\n"); return false; }
-			if (HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS)) {printf("spi2 cs is 1. end read data\r\n"); break;}
+    		if (!MSP_SPI_read(_spi, _cs, rxbuf, 5)) {LOGE("spi read err \r\n");}//{ LOGE("spi read err \r\n"); return false; }
+			if (HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS)) {LOGI("spi2 cs is 1. end read data\r\n"); break;}
 		}
   	}while ((HAL_GetTick() - msTickstart) < 50);		//{0xAC, 0xA0, 0xB0, 0x30, 0xE1};
-	printf("\r\nmsTickstart : %ld\r\n", (HAL_GetTick() - msTickstart));
-	printf(" read is ... ");
+	LOGI("\r\nmsTickstart : %ld\r\n", (HAL_GetTick() - msTickstart));
+	LOGI(" read is ... ");
 	for (int i = 0 ; i < 5 ; i++) {
-		printf("%02X, ", rxbuf[i]);
+		LOGI("%02X, ", rxbuf[i]);
 	}
-	printf("\r\n read rxack ok... %d\r\n", rxi);
+	LOGI("\r\n read rxack ok... %d\r\n", rxi);
   	return true;
 }
 #endif
@@ -202,7 +250,7 @@ bool SPITransfer::Master_readACKfrom_Slave(uint8_t cs)
   	{
     	if (!MSP_SPI_read(_spi, _cs, &rxack, 1)) return false;
 		if ((HAL_GetTick() - msTickstart) > sTxRx_TimeOut) {
-      		printf("spi rx timeout....\r\n");
+      		LOGE("spi rx timeout....\r\n");
       		return false;
     	}
   	} while (rxack != SPI_SLAVE_ACK);
@@ -263,11 +311,11 @@ void SPITransfer::Master_readDATAfrom_Slave_withPacket(uint8_t cs)
 		//if (recChar != 126) continue;
 		if (rxi > 100) rxi = 0;
 		spiRxData[rxi++] 		= recChar;   //
-		//printf("%d, ", recChar);
+		//LOGI("%d, ", recChar);
     	bytesRead                					= packet.parse(recChar);
 		status                   					= packet.status;
 		if (status != CONTINUE) {
-      		printf("\r\nstatus : %d, bytesRead : %d\r\n", status, bytesRead);
+      		LOGI("\r\nstatus : %d, bytesRead : %d\r\n", status, bytesRead);
       		if (status < 0) {
 				reset(); 
 				_chipH->spiTransState = SpiTrans_S2M_RxData_Err;
@@ -280,12 +328,12 @@ void SPITransfer::Master_readDATAfrom_Slave_withPacket(uint8_t cs)
 	}while((xTaskGetTickCount() - msTickstart) < sTrans_TimeOut * 20);             //while(recChar != 129); //0xAA);
 
 #if 1   //打印测试信息
-  	printf("read spi data len : %d\r\n", rxi);
+  	LOGI("read spi data len : %d\r\n", rxi);
   	for (int i = 0; i < rxi; i++) {
-    	printf("%d, ", spiRxData[i]);
+    	LOGI("%d, ", spiRxData[i]);
   	}
-  	printf("-------------%ld\r\n", xTaskGetTickCount());
-  	printf("status : %d\r\n", status);
+  	LOGI("-------------%ld\r\n", xTaskGetTickCount());
+  	LOGI("status : %d\r\n", status);
   	rxi = 0;
 #endif
 #if 1
@@ -293,7 +341,7 @@ void SPITransfer::Master_readDATAfrom_Slave_withPacket(uint8_t cs)
   	//if (sTransState[cBoard] == SpiTrans_S2M_RxData_End) break;
   	if ((HAL_GetTick() - msTickstart) > sTrans_TimeOut) 
   	{
-    	printf("spi trans timeout\r\n");
+    	LOGE("spi trans timeout\r\n");
   	}
 #endif
 	_chipH->spiTransState = SpiTrans_TimeOut;
@@ -307,17 +355,17 @@ void SPITransfer::Master_readDATAfrom_Slave_withPacket(uint8_t cs)
   */
 void SPITransfer::Master_Spi1_Transfer(uint8_t boardID)
 {
-  	//printf("current board : --------------------------------------------------------------------%d\r\n", boardID);
+  	//LOGE("current board : --------------------------------------------------------------------%d\r\n", boardID);
 	if (boardID == -1) { _chipH->spiTransState = SpiTrans_Err; return; }
 
 /*****如果没收到slave板发过来的ack信号， master板就重新发送一次ack信号给slave板，循环3次都失败的话，退出报错*****/  
 	for (int i = 0; i < spiTxRx_reRunTimes; i++) {
 		/* 1------主控板发送 ACK signal 给 slave板 */
 		if (Master_writeACKto_Slave(boardID)) {
-			printf("tx ack end\r\n");
+			LOGI("tx ack end\r\n");
 			break;
   		} else { 
-			printf("tx ack err\r\n");
+			LOGE("tx ack err\r\n");
 			if (i >= (spiTxRx_reRunTimes - 1)) { _chipH->spiTransState = SpiTrans_M2S_TxAck_Err; return; }   //{sTransState[cBoard] = SpiTrans_M2S_TxAck_Err; return;}
 			else continue;
 		}
@@ -325,24 +373,24 @@ void SPITransfer::Master_Spi1_Transfer(uint8_t boardID)
   	/* 4------从slave板接收数据------------ */
   	//uint16_t recSize = 0;
   	//uint8_t rbuf[50];
-	printf("start read data from slave \r\n");
+	LOGI("start read data from slave \r\n");
 	//osDelay(100);
   	Master_readDATAfrom_Slave_withPacket(boardID);            	//1-----接收数据
-  	if (_chipH->spiTransState != SpiTrans_S2M_RxData_End) { printf("read rxdata err\r\n"); return; }
+  	if (_chipH->spiTransState != SpiTrans_S2M_RxData_End) { LOGE("read rxdata err\r\n"); return; }
 	//recSize = packet.rxObj(rbuf, recSize);                                  				//2-------解析出可用数据
-  	printf("rec data : ");
+  	LOGI("rec data : ");
   	//for (int i = 0 ; i < _chipH->spiRx_uartTx_u8regs_size ; i++) {
 	for (int i = 0 ; i < (packet.bytesRead) ; i++) {
 		_chipH->spiRx_uartTx_u8regs[i] = packet.rxBuff[i];
-    	//printf("%c", rbuf[i]);
-		//printf("%d", _chipH->spiRx_uartTx_u8regs[i]); packet
-		printf("%2X ", packet.rxBuff[i]); 
+    	//LOGI("%c", rbuf[i]);
+		//LOGI("%d", _chipH->spiRx_uartTx_u8regs[i]); packet
+		LOGI("%2X ", packet.rxBuff[i]); 
   	}
 	_chipH->spiRx_uartTx_u8regs_size = packet.bytesRead;
-  	printf(".......%d\r\n", packet.bytesRead);
+  	LOGI(".......%d\r\n", packet.bytesRead);
 
 	/* 5------接收完数据后，master板发送end信号给slave板------------ */
-	if (!Master_writeENDto_Slave(boardID)) { printf("write end to slave err\r\n"); _chipH->spiTransState = SpiTrans_Err; return; }
+	if (!Master_writeENDto_Slave(boardID)) { LOGI("write end to slave err\r\n"); _chipH->spiTransState = SpiTrans_Err; return; }
 	_chipH->spiTransState = SpiTrans_End;
 	return;
 }
@@ -353,37 +401,101 @@ void SPITransfer::Master_Spi1_Transfer(uint8_t boardID)
   * @param  currentBoard_TypeDef 当前触发的板子号
   * @retval None                                            如果同步成功，返回true
   */
-void SPITransfer::Slave_Spi2_Transfer(uint8_t boardID)
+void SPITransfer::Master_Spi1_Transfer(uint8_t TxRxFlag, uint8_t boardID)
+{
+
+}
+
+/**
+  * @brief  Slave trans data to master with spi2.
+  * @param  currentBoard_TypeDef 当前触发的板子号
+  * @retval None                                            如果同步成功，返回true
+  */
+void SPITransfer::Slave_Spi2_Transfer(uint8_t TxRxFlag, uint8_t boardID)
 {
 //	
-	uint8_t test_TxBuff[] = {11, 22, 33, 104, 101, 44, 55, 66, 77, 88, 99, 132, 126, 0, 255, 12};  
-  	uint16_t sendSize = 0;
-  	sendSize = packet.txObj(test_TxBuff, sendSize);  		//1-------封装数据
-	//printf("current board : --------------------------------------------------------------------%d\r\n", boardID);
-//	if (boardID == -1) { _chipH->spiTransState = SpiTrans_Err; return; }
-#if 1
-/*****读取master板发过来的ack信号，失败的话，退出报错*****/  
-	//printf("start  Slave_Spi2_Transfer\r\n");
-	while (HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS)) {} 
-	/* 1------主控板发送 ACK signal 给 slave板 */
-	if (!Slave_SyncWith_Master(SPI_MASTER_ACK)) {
-		printf("read ack from master error.................................\r\n");
-		return;
+	if (TxRxFlag == TxFlag)
+	{
+		uint32_t txTickstart = xTaskGetTickCount();	
+		uint8_t test_TxBuff[] = {11, 22, 33, 104, 101, 44, 55, 66, 77, 88, 99, 132, 126, 0, 255, 12};  
+  		uint16_t sendSize = 0;
+  		sendSize = packet.txObj(test_TxBuff, sendSize);  		//1-------封装数据
+		//LOGI("current board : --------------------------------------------------------------------%d\r\n", boardID);
+	#if 0
+	/*****读取master板发过来的ack信号，失败的话，退出报错*****/  
+		//LOGI("start  Slave_Spi2_Transfer\r\n");
+		do {
+			//if (MSP_SPI2_CS_STATUS()) continue;
+			while (MSP_SPI2_CS_STATUS()) {}	
+			/* 1------主控板发送 ACK signal 给 slave板 */
+			if (!Slave_SyncWith_Master(SPI_MASTERRead_ACK)) {
+				LOGE("read ack from master error.................................\r\n");
+				return;
+			}
+			/* 2------往master板发送数据------------ */
+			//	LOGE("start write data to master \r\n");               			
+  			Slave_writeDATAto_Master_withPacket(sendSize, boardID);            		//2-------发送数据
+			//while (!MSP_SPI2_CS_STATUS()) {}		//while(!HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS)) {} 
+			//	MSP_SPI_write(_spi, _cs, test_TxBuff, sizeof(test_TxBuff));
+			//  	LOGI("write data  end  \r\n");
+			_chipH->spiTransState = SpiTrans_End;
+		}while( xTaskGetTickCount() - txTickstart > 50);
+	#endif
+
+	#if 1
+	/*****读取master板发过来的ack信号，失败的话，退出报错*****/  
+		//LOGI("start  Slave_Spi2_Transfer\r\n");
+		while (MSP_SPI2_CS_STATUS()) {
+			if (xTaskGetTickCount() - txTickstart > 50) return;
+		}
+		//LOGI("MSP_SPI2_CS_STATUS......%d \r\n", MSP_SPI2_CS_STATUS());
+		/* 1------主控板发送 ACK signal 给 slave板 */
+		if (!Slave_SyncWith_Master(SPI_MASTERRead_ACK)) {
+			LOGE("read ack from master error.................................\r\n");
+			return;
+		}
+  		/* 2------往master板发送数据------------ */             			
+  		Slave_writeDATAto_Master_withPacket(sendSize, boardID);            		//2-------发送数据
+		while (!MSP_SPI2_CS_STATUS()) {}
+		//LOGI("MSP_SPI2_CS_STATUS......%d \r\n", MSP_SPI2_CS_STATUS());
+		_chipH->spiTransState = SpiTrans_End;
+	#endif
+
+	} else if (TxRxFlag == RxFlag) 
+	{
+		//uint32_t rxTickstart = xTaskGetTickCount();	
+		//LOGI("goto write slave ack......%d \r\n", MSP_SPI2_CS_STATUS());
+		if (MSP_SPI2_CS_STATUS()) { return; }
+		//LOGI("goto write slave ack......%d \r\n", MSP_SPI2_CS_STATUS());
+		//uint8_t rxData;
+		/* 1------slave板 发送 ACK signal 给 master板 */
+		#if 1
+		if (!Slave_writeSyncto_Master(SPI_SLAVE_ACK)) {
+			LOGE("tx ack error\r\n");
+			return;
+		}
+		#endif
+		#if 0
+		if (!MSP_SPI_read(_spi, &rxData, 1)) {}
+		if (rxData != SPI_MASTERWrite_ACK) { return; }
+		#endif
+		//while (!MSP_SPI2_CS_STATUS()) {}
+		//LOGI("read SPI_MASTERWrite_ACK ok \r\n");
+
+		/* 2------接收master板发送过来的数据------------ */
+		//while (MSP_SPI2_CS_STATUS()) {}	
+		Slave_readDATAfrom_Master_withPacket();
+		//while (!MSP_SPI2_CS_STATUS()) 
+		//{
+		//	if (xTaskGetTickCount() - rxTickstart > 2) return;
+		//}
+		//LOGI("\r\n");
+		for (int i = 0 ; i < (packet.bytesRead) ; i++) {
+			LOGI("%02X ", packet.rxBuff[i]); 
+  		}
+		LOGI("......receive SPI_MASTERWrite_ACK!........%d.....%d\r\n", packet.status, packet.bytesRead);
+		
 	}
-  	/* 2------往master板发送数据------------ */
-//	printf("start write data to master \r\n");
-  	                   			
-  	Slave_writeDATAto_Master_withPacket(sendSize, boardID);            		//2-------发送数据
-	while(!HAL_GPIO_ReadPin(SPI2_CS_Port, SPI2_CS)) {} 
-//	MSP_SPI_write(_spi, _cs, test_TxBuff, sizeof(test_TxBuff));
-//  	printf("write data  end  \r\n");
-	/* 3------读取master板发送过来的end信号------------ */
-//	if (!Slave_SyncWith_Master(SPI_Trans_END, boardID)) {
-//		printf("read end signal from master error!!!!\r\n");
-//		return;
-//	}
-	_chipH->spiTransState = SpiTrans_End;
-#endif
 	return;
 }
 
@@ -423,7 +535,7 @@ void SPITransfer::reset()
 	MSP_SPI_write(_spi, &txdata, 1);	//_spi->transfer(0xFF);
 	packet.reset();
 	status = packet.status;
-	printf("spi transfer reset \r\n");
+	LOGE("spi transfer reset \r\n");
 }
 
 /*
@@ -442,14 +554,20 @@ extern void SPITransfer_C_Master_Spi1_Transfer(void *SpiTrans, DChipID_TypeDef c
 	return;
 }
 #endif
-extern void SPITransfer_C_Slave_Spi2_Transfer(void *SpiTrans, DChipID_TypeDef chipID)
+extern void SPITransfer_C_Slave_Spi2_Transfer(void *SpiTrans, uint8_t TxRxFlag, DChipID_TypeDef chipID)
 {
 	SPITransfer *sTrans = (SPITransfer *)SpiTrans;
-	sTrans->Slave_Spi2_Transfer((uint8_t)chipID);
+	sTrans->Slave_Spi2_Transfer(TxRxFlag, (uint8_t)chipID);
 	delete sTrans;
 	return;
 }
-
+extern void SPITransfer_C_Master_Spi1_Transfer(void *SpiTrans, uint8_t TxRxFlag, DChipID_TypeDef chipID)
+{
+	SPITransfer *sTrans = (SPITransfer *)SpiTrans;
+	sTrans->Master_Spi1_Transfer(TxRxFlag, (uint8_t)chipID);
+	delete sTrans;
+	return;
+}
 
 //#endif // not (defined(MBED_H) || defined(__SAM3X8E__))
 

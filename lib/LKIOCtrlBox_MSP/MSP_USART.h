@@ -5,6 +5,7 @@
  extern "C" {
 #endif
 
+#include "LOG.h"
 #include "stm32f4xx_hal.h"
 //#include <string.h>
 //#include <stdlib.h>
