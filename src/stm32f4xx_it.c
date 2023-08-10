@@ -1,21 +1,21 @@
 /* USER CODE BEGIN Header */
 /**
-  ******************************************************************************
-  * @file    stm32f4xx_it.c
-  * @brief   Interrupt Service Routines.
-  ******************************************************************************
-  * @attention
-  *
-  * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
-  * All rights reserved.</center></h2>
-  *
-  * This software component is licensed by ST under BSD 3-Clause license,
-  * the "License"; You may not use this file except in compliance with the
-  * License. You may obtain a copy of the License at:
-  *                        opensource.org/licenses/BSD-3-Clause
-  *
-  ******************************************************************************
-  */
+ ******************************************************************************
+ * @file    stm32f4xx_it.c
+ * @brief   Interrupt Service Routines.
+ ******************************************************************************
+ * @attention
+ *
+ * <h2><center>&copy; Copyright (c) 2020 STMicroelectronics.
+ * All rights reserved.</center></h2>
+ *
+ * This software component is licensed by ST under BSD 3-Clause license,
+ * the "License"; You may not use this file except in compliance with the
+ * License. You may obtain a copy of the License at:
+ *                        opensource.org/licenses/BSD-3-Clause
+ *
+ ******************************************************************************
+ */
 /* USER CODE END Header */
 
 /* Includes ------------------------------------------------------------------*/
@@ -57,12 +57,13 @@
 
 /* External variables --------------------------------------------------------*/
 extern SPI_HandleTypeDef hspi1;
-extern SPI_HandleTypeDef hspi2;
-extern DMA_HandleTypeDef hdma_usart2_rx;
-extern DMA_HandleTypeDef hdma_usart2_tx;
-extern UART_HandleTypeDef huart1;
-extern UART_HandleTypeDef huart2;
+extern CAN_HandleTypeDef hcan2;
+extern UART_HandleTypeDef huart3;
 extern TIM_HandleTypeDef htim2;
+extern TIM_HandleTypeDef htim3;
+extern TIM_HandleTypeDef htim4;
+extern TIM_HandleTypeDef htim12;
+extern TIM_HandleTypeDef htim14;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -72,25 +73,35 @@ extern TIM_HandleTypeDef htim2;
 /******************************************************************************/
 
 /**
-  * @brief  This function handles External line 0 interrupt request.
-  * @param  None
-  * @retval None
-  */
+ * @brief  This function handles External line 0 interrupt request.
+ * @param  None
+ * @retval None
+ */
 void EXTI0_IRQHandler(void)
 {
-  //LOGI("exti0 irq\r\n");
+	// LOGI("exti0 irq\r\n");
 }
 /**
-  * @brief  This function handles External line 3 interrupt request.
-  * @param  None
-  * @retval None
-  */
+ * @brief  This function handles External line 2 interrupt request.
+ * @param  None
+ * @retval None
+ */
+void EXTI2_IRQHandler(void)
+{
+	HAL_GPIO_EXTI_IRQHandler(ZRC_IN9_Pin);
+}
+/**
+ * @brief  This function handles External line 3 interrupt request.
+ * @param  None
+ * @retval None
+ */
 void EXTI3_IRQHandler(void)
 {
 #ifdef DEVBoard
-  HAL_GPIO_EXTI_IRQHandler(DIB_INT_PIN1);
-#else
-  HAL_GPIO_EXTI_IRQHandler(KEY_Pin);
+	HAL_GPIO_EXTI_IRQHandler(DIB_INT_PIN1);
+#elif defined(DEVBoardYD)
+	// LOG("exti3\r\n");
+	HAL_GPIO_EXTI_IRQHandler(KEY_Pin);
 #endif
 }
 
@@ -104,112 +115,118 @@ void EXTI4_IRQHandler(void)
 {
   HAL_GPIO_EXTI_IRQHandler(DIB_INT_PIN2);
 }
+#endif
 
+#if 1
 /**
-  * @brief This function handles EXTI line[9:5] interrupts.
-  */
+ * @brief This function handles EXTI line[9:5] interrupts.
+ */
 void EXTI9_5_IRQHandler(void)
 {
-  HAL_GPIO_EXTI_IRQHandler(DQB_INT_PIN1);
+	HAL_GPIO_EXTI_IRQHandler(ZRC_IN1_Pin);
+	HAL_GPIO_EXTI_IRQHandler(ZRC_IN2_Pin);
 }
+
 /**
-  * @brief This function handles EXTI line[15:10] interrupts.
-  */
+ * @brief This function handles EXTI line[15:10] interrupts.
+ */
 void EXTI15_10_IRQHandler(void)
 {
-#ifdef DEVBoardYD
-  HAL_GPIO_EXTI_IRQHandler(DIB_INT_PIN1);
-#else
-  HAL_GPIO_EXTI_IRQHandler(KEY_Pin);
+	HAL_GPIO_EXTI_IRQHandler(ZRC_IN3_Pin);
+	HAL_GPIO_EXTI_IRQHandler(ZRC_IN4_Pin);
+	HAL_GPIO_EXTI_IRQHandler(ZRC_IN5_Pin);
+#ifndef DEVBoardYD
+	HAL_GPIO_EXTI_IRQHandler(ZRC_IN6_Pin);
+	HAL_GPIO_EXTI_IRQHandler(ZRC_IN7_Pin);
+	HAL_GPIO_EXTI_IRQHandler(ZRC_IN8_Pin);
 #endif
 }
 #endif
 
 /**
-  * @brief This function handles Non maskable interrupt.
-  */
+ * @brief This function handles Non maskable interrupt.
+ */
 void NMI_Handler(void)
 {
-  /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
+	/* USER CODE BEGIN NonMaskableInt_IRQn 0 */
 
-  /* USER CODE END NonMaskableInt_IRQn 0 */
-  /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
+	/* USER CODE END NonMaskableInt_IRQn 0 */
+	/* USER CODE BEGIN NonMaskableInt_IRQn 1 */
 
-  /* USER CODE END NonMaskableInt_IRQn 1 */
+	/* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
 /**
-  * @brief This function handles Hard fault interrupt.
-  */
+ * @brief This function handles Hard fault interrupt.
+ */
 void HardFault_Handler(void)
 {
-  /* USER CODE BEGIN HardFault_IRQn 0 */
+	/* USER CODE BEGIN HardFault_IRQn 0 */
 
-  /* USER CODE END HardFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-    /* USER CODE END W1_HardFault_IRQn 0 */
-  }
+	/* USER CODE END HardFault_IRQn 0 */
+	while (1)
+	{
+		/* USER CODE BEGIN W1_HardFault_IRQn 0 */
+		/* USER CODE END W1_HardFault_IRQn 0 */
+	}
 }
 
 /**
-  * @brief This function handles Memory management fault.
-  */
+ * @brief This function handles Memory management fault.
+ */
 void MemManage_Handler(void)
 {
-  /* USER CODE BEGIN MemoryManagement_IRQn 0 */
+	/* USER CODE BEGIN MemoryManagement_IRQn 0 */
 
-  /* USER CODE END MemoryManagement_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
-    /* USER CODE END W1_MemoryManagement_IRQn 0 */
-  }
+	/* USER CODE END MemoryManagement_IRQn 0 */
+	while (1)
+	{
+		/* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
+		/* USER CODE END W1_MemoryManagement_IRQn 0 */
+	}
 }
 
 /**
-  * @brief This function handles Pre-fetch fault, memory access fault.
-  */
+ * @brief This function handles Pre-fetch fault, memory access fault.
+ */
 void BusFault_Handler(void)
 {
-  /* USER CODE BEGIN BusFault_IRQn 0 */
+	/* USER CODE BEGIN BusFault_IRQn 0 */
 
-  /* USER CODE END BusFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
-    /* USER CODE END W1_BusFault_IRQn 0 */
-  }
+	/* USER CODE END BusFault_IRQn 0 */
+	while (1)
+	{
+		/* USER CODE BEGIN W1_BusFault_IRQn 0 */
+		/* USER CODE END W1_BusFault_IRQn 0 */
+	}
 }
 
 /**
-  * @brief This function handles Undefined instruction or illegal state.
-  */
+ * @brief This function handles Undefined instruction or illegal state.
+ */
 void UsageFault_Handler(void)
 {
-  /* USER CODE BEGIN UsageFault_IRQn 0 */
+	/* USER CODE BEGIN UsageFault_IRQn 0 */
 
-  /* USER CODE END UsageFault_IRQn 0 */
-  while (1)
-  {
-    /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-    /* USER CODE END W1_UsageFault_IRQn 0 */
-  }
+	/* USER CODE END UsageFault_IRQn 0 */
+	while (1)
+	{
+		/* USER CODE BEGIN W1_UsageFault_IRQn 0 */
+		/* USER CODE END W1_UsageFault_IRQn 0 */
+	}
 }
 
-
 /**
-  * @brief This function handles Debug monitor.
-  */
+ * @brief This function handles Debug monitor.
+ */
 void DebugMon_Handler(void)
 {
-  /* USER CODE BEGIN DebugMonitor_IRQn 0 */
+	/* USER CODE BEGIN DebugMonitor_IRQn 0 */
 
-  /* USER CODE END DebugMonitor_IRQn 0 */
-  /* USER CODE BEGIN DebugMonitor_IRQn 1 */
+	/* USER CODE END DebugMonitor_IRQn 0 */
+	/* USER CODE BEGIN DebugMonitor_IRQn 1 */
 
-  /* USER CODE END DebugMonitor_IRQn 1 */
+	/* USER CODE END DebugMonitor_IRQn 1 */
 }
 
 #if 0
@@ -233,97 +250,64 @@ void SysTick_Handler(void)
 /* please refer to the startup file (startup_stm32f4xx.s).                    */
 /******************************************************************************/
 /**
-  * @brief This function handles DMA1 stream5 global interrupt.
-  */
-void DMA1_Stream5_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Stream5_IRQn 0 */
-
-  /* USER CODE END DMA1_Stream5_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_rx);
-  //LOGI("dma1 stream5 rx irq \r\n");
-  /* USER CODE BEGIN DMA1_Stream5_IRQn 1 */
-
-  /* USER CODE END DMA1_Stream5_IRQn 1 */
-}
-
-/**
-  * @brief This function handles DMA1 stream6 global interrupt.
-  */
-void DMA1_Stream6_IRQHandler(void)
-{
-  /* USER CODE BEGIN DMA1_Stream6_IRQn 0 */
-
-  /* USER CODE END DMA1_Stream6_IRQn 0 */
-  HAL_DMA_IRQHandler(&hdma_usart2_tx);
-  //LOGI("dma1 stream6 tx irq \r\n");
-  /* USER CODE BEGIN DMA1_Stream6_IRQn 1 */
-
-  /* USER CODE END DMA1_Stream6_IRQn 1 */
-}
-
-/**
-  * @brief This function handles TIM2 global interrupt.
-  */
+ * @brief This function handles TIM2 global interrupt.
+ */
 void TIM2_IRQHandler(void)
 {
-  /* USER CODE BEGIN TIM2_IRQn 0 */
+	/* USER CODE BEGIN TIM2_IRQn 0 */
 
-  /* USER CODE END TIM2_IRQn 0 */
-  HAL_TIM_IRQHandler(&htim2);
-  /* USER CODE BEGIN TIM2_IRQn 1 */
+	/* USER CODE END TIM2_IRQn 0 */
+	HAL_TIM_IRQHandler(&htim2);
+	/* USER CODE BEGIN TIM2_IRQn 1 */
 
-  /* USER CODE END TIM2_IRQn 1 */
+	/* USER CODE END TIM2_IRQn 1 */
 }
 
 /**
-  * @brief This function handles USART1 global interrupt.
+  * @brief This function handles TIM3 global interrupt.
   */
-void USART1_IRQHandler(void)
+void TIM3_IRQHandler(void)
 {
-  /* USER CODE BEGIN USART1_IRQn 0 */
-
-  /* USER CODE END USART1_IRQn 0 */
-  HAL_UART_IRQHandler(&huart1);
-  /* USER CODE BEGIN USART1_IRQn 1 */
-
-  /* USER CODE END USART1_IRQn 1 */
+	//LOG("tim3 irqhandle\r\n");
+  HAL_TIM_IRQHandler(&htim3);
+  
 }
 
 /**
-  * @brief This function handles USART2 global interrupt.
+  * @brief This function handles TIM4 global interrupt.
   */
-void USART2_IRQHandler(void)
+void TIM4_IRQHandler(void)
 {
-  /* USER CODE BEGIN USART2_IRQn 0 */
-
-  /* USER CODE END USART2_IRQn 0 */
-  HAL_UART_IRQHandler(&huart2);
-//  LOGI("usart2 irq \r\n");
-  /* USER CODE BEGIN USART2_IRQn 1 */
-
-  /* USER CODE END USART2_IRQn 1 */
+  HAL_TIM_IRQHandler(&htim4);
 }
 
 /**
-  * @brief  This function handles SPI 1 interrupt request.
-  * @param  None
-  * @retval None
+  * @brief This function handles TIM8 break interrupt and TIM12 global interrupt.
   */
+void TIM8_BRK_TIM12_IRQHandler(void)
+{
+  HAL_TIM_IRQHandler(&htim12);
+}
+
+/**
+  * @brief This function handles TIM8 trigger and commutation interrupts and TIM14 global interrupt.
+  */
+void TIM8_TRG_COM_TIM14_IRQHandler(void)
+{
+	//LOG("tim14 irqhandler\r\n");
+	HAL_TIM_IRQHandler(&htim14);
+  
+}
+
+#ifdef PowerBoard_ACS37800
+/**
+ * @brief  This function handles SPI 1 interrupt request.
+ * @param  None
+ * @retval None
+ */
 void SPI1_IRQHandler(void)
 {
-  //LOGI("spi2 irq.....\r\n");
-  HAL_SPI_IRQHandler(&hspi1);
+	// LOGI("spi2 irq.....\r\n");
+	HAL_SPI_IRQHandler(&hspi1);
 }
-
-/**
-  * @brief  This function handles SPI 2 interrupt request.
-  * @param  None
-  * @retval None
-  */
-void SPI2_IRQHandler(void)
-{
-  //LOGI("spi2 irq.....\r\n");
-  HAL_SPI_IRQHandler(&hspi2);
-}
-
+#endif
