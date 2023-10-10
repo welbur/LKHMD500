@@ -19,7 +19,10 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "CO_app_STM32.h"
+
+#include "eventos.h"                                // EventOS Nano头文件
+#include "event_def.h"                              // 事件主题的枚举
+#include "eos_event.h"                              // LED灯闪烁状态机
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -31,26 +34,27 @@
 
 /* USER CODE END PTD */
 
-/* Private define ------------------------------------------------------------*/
+// BackPanelHandler_t BackPanelH;
 
-/* Private variables ---------------------------------------------------------*/
-uint8_t 			DevButton = 0;	//测试用 
-uint8_t				SPI2_CS_Trig = 0;	//spi2 片选信号的触发
-uint32_t 			uhCapture1 = 0;
-uint8_t				uhCapture_N = 0;
-//uint8_t 			_slaveBoardID;
-#ifdef RS485_Board
-/*modbus相关参数*/
-modbusHandler_t ModbusH;
-uint16_t ModbusDATA[128];
+#if (EOS_USE_PUB_SUB != 0)
+static eos_u32_t eos_sub_table[Event_Max];          // 订阅表数据空间
 #endif
+
+uint16_t DeviceStateInfo = DeviceState_Default;  
+
+uint32_t TransLastTime = 0;
+uint32_t BPTrans_period = 10;
+
+/* 与LAN9255通信协议的相关参数 */
+EPDOHandler_t EtherCatPDOH;
+INDATAParaHandle INDataValue;
+OUTDATAParaHandle OUTDataValue;
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-void MX_FREERTOS_Init(void);
 void Error_Handler(void);
 
-//void SPI1_CS_GPIO_Init(void);
+// void SPI1_CS_GPIO_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /**/
 
@@ -70,94 +74,86 @@ int main(void)
 
 	/* Initialize all configured peripherals */
 	MX_GPIO_Init();
-	EXTILine_Config();
-	
-	MX_USART3_UART_Init();
 	MX_DMA_Init();
-#ifdef PowerBoard_ACS37800
-	MX_SPI1_Init();
-	SPI1_CS_GPIO_Init();
-#endif
+	MX_CRC_Init();
 
-	MX_CAN2_Init();
+	MX_USART1_UART_Init();
+	MX_USART3_UART_Init();
 
-//	FiltersInit();
-
-	MX_TIM3_Init();
-	MX_TIM4_Init();
-	MX_TIM12_Init();
-	MX_TIM14_Init();
+//		MX_TIM3_Init();
+//		MX_TIM4_Init();
+	//	MX_TIM12_Init();
+	MX_TIM6_Init();
 	LOG("Initialize all configured peripherals OK!\r\n");
 
-#ifdef RS485_Board
-	/* Modbus 从站初始化Slave initialization */
-	ModbusH.uModbusType = MB_SLAVE;
-	ModbusH.port = &huart2;
-	ModbusH.u8id = 1; // slave ID,  For master it must be 0
-	ModbusH.u16timeOut = 1000;
-	ModbusH.EN_Port = NULL; // No RS485   //ModbusH.EN_Port = NULL;
-	ModbusH.EN_Pin = 0;
-	// ModbusH2.EN_Port = LD2_GPIO_Port; // RS485 Enable
-	// ModbusH2.EN_Pin = LD2_Pin; // RS485 Enable
-	ModbusH.u16regs = ModbusDATA;
-	ModbusH.u16regsize = sizeof(ModbusDATA) / sizeof(ModbusDATA[0]);
-	ModbusH.xTypeHW = USART_HW_DMA;
-	LOGI("start modbus rtu master...\r\n");
-	// Initialize Modbus library
-	ModbusInit(&ModbusH);
-	// Start capturing traffic on serial Port
-	ModbusStart(&ModbusH);
-	/***********/
+#if 1
+	/* 初始化跟LAN9255的通信协议 */
+	EtherCatPDOH.devName = "HMD500";
+	EtherCatPDOH.port = &huart1;
+//	EtherCatPDOH.RecvBuf = BPRecvData;
+	EtherCatPDOH.read_LAN9255State_interval = 1500;
+	EtherCatPDOH.INData_Para = &INDataValue;
+	EtherCatPDOH.OUTData_Para = &OUTDataValue;
+	EtherCatPDO_Init(&EtherCatPDOH);
 #endif
-//	HAL_TIM_Base_Start_IT(canopenNodeSTM32->timerHandle);
-	/* Infinite loop */
-//	osKernelInitialize(); /* Call init function for freertos objects (in freertos.c) */
-	
 
-//	MX_FREERTOS_Init();
-	LOG("start freertos\r\n");
-	/* Start scheduler */
-//	osKernelStart();
+#if 0
+	/* 设置BackPanelTrans的相关参数 */
+	BackPanelH.port = &huart1;
+	BackPanelH.BoardID = getBoardID();
+//	BackPanelH.RecvBuf = BPRecvData;
+//	BackPanelH.RecvBufSize = sizeof(BPRecvData) / sizeof(BPRecvData[0]);
+//	BackPanelH.SendBuf = BPSendData;
+//	BackPanelH.SendBufSize = sizeof(BPSendData) / sizeof(BPSendData[0]);
 	
-	//waitBackPanelTaskDone();
-	uint32_t msticktime = HAL_GetTick();
-	while (1)
-	{
-		if ((HAL_GetTick() - msticktime) > 100)
-		{
-			msticktime = HAL_GetTick();
-			//if (HAL_GPIO_ReadPin(TIM3_GPIO_Port, TIM3_CH1_Pin) == 1)
-	  			LOG("tim3 ch1 value : %d\r\n", HAL_GPIO_ReadPin(TIM3_GPIO_Port, TIM3_CH1_Pin));
-			//if (HAL_GPIO_ReadPin(TIM3_GPIO_Port, TIM3_CH2_Pin) == 1)
-			//	LOG("tim3 ch2.... value : %d\r\n", HAL_GPIO_ReadPin(TIM3_GPIO_Port, TIM3_CH2_Pin));
-			//HAL_Delay(100);
-		}
+	BackPanelProtocol_Init(&BackPanelH);
+#endif
+
+	/* 初始化eventos系统:状态机系统 */
+    if (SysTick_Config(SystemCoreClock / 1000) != 0) {
+		LOG("eos system core clock error!!!!!\r\n");
+	    while (1);
+	}
+    
+	eos_init();                                     // EventOS初始化
+#if (EOS_USE_PUB_SUB != 0)
+    eos_sub_init(eos_sub_table, Event_Max);         // 订阅表初始化
+#endif
+
+#if (EOS_USE_SM_MODE != 0)
+    eos_sm_led_init();                              // LED状态机初始化
+	eos_sm_printlog_init();							// 打印log信息的状态机初始化
+#endif
+
+    eos_run();                                      // EventOS启动
+	
+	while (1) {
+		LOG("main loop\r\n");
 	}
 }
 
 /**
-  * @brief  System Clock Configuration
-  *         The system Clock is configured as follow : 
-  *            System Clock source            = PLL (HSI)
-  *            SYSCLK(Hz)                     = 100000000
-  *            HCLK(Hz)                       = 100000000
-  *            AHB Prescaler                  = 1
-  *            APB1 Prescaler                 = 2
-  *            APB2 Prescaler                 = 1
-  *            HSI Frequency(Hz)              = 16000000
-  * 		   /////////HSE Frequency(Hz)              = 8000000
-  *            PLL_M                          = 8
-  *            PLL_N                          = 100
-  *            PLL_P                          = 2
-  *            PLL_Q                          = 2
-  *            PLL_R                          = 2
-  *            VDD(V)                         = 3.3
-  *            Main regulator output voltage  = Scale1 mode
-  *            Flash Latency(WS)              = 3
-  * @param  None
-  * @retval None
-  */
-#if 1
+ * @brief  System Clock Configuration
+ *         The system Clock is configured as follow :
+ *            System Clock source            = PLL (HSI)
+ *            SYSCLK(Hz)                     = 100000000
+ *            HCLK(Hz)                       = 100000000
+ *            AHB Prescaler                  = 1
+ *            APB1 Prescaler                 = 2
+ *            APB2 Prescaler                 = 1
+ *            HSI Frequency(Hz)              = 16000000
+ * 		   /////////HSE Frequency(Hz)              = 8000000
+ *            PLL_M                          = 8
+ *            PLL_N                          = 100
+ *            PLL_P                          = 2
+ *            PLL_Q                          = 2
+ *            PLL_R                          = 2
+ *            VDD(V)                         = 3.3
+ *            Main regulator output voltage  = Scale1 mode
+ *            Flash Latency(WS)              = 3
+ * @param  None
+ * @retval None
+ */
 void SystemClock_Config(void)
 {
 	RCC_OscInitTypeDef RCC_OscInitStruct = {0};
@@ -165,22 +161,27 @@ void SystemClock_Config(void)
 
 	/** Configure the main internal regulator output voltage
 	 */
-	__HAL_RCC_PWR_CLK_ENABLE();
-	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+	HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1);
+
+	/** Configure LSE Drive Capability
+	 */
+	HAL_PWR_EnableBkUpAccess();
+	__HAL_RCC_LSEDRIVE_CONFIG(RCC_LSEDRIVE_LOW);
 
 	/** Initializes the RCC Oscillators according to the specified parameters
 	 * in the RCC_OscInitTypeDef structure.
 	 */
-	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_LSI | RCC_OSCILLATORTYPE_HSE | RCC_OSCILLATORTYPE_LSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+	RCC_OscInitStruct.LSEState = RCC_LSE_ON;
+	RCC_OscInitStruct.LSIState = RCC_LSI_ON;
 	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-	RCC_OscInitStruct.PLL.PLLM = 8;
-	RCC_OscInitStruct.PLL.PLLN = 100;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLM = RCC_PLLM_DIV1;
+	RCC_OscInitStruct.PLL.PLLN = 25;
 	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-	RCC_OscInitStruct.PLL.PLLQ = 2;
-	RCC_OscInitStruct.PLL.PLLR = 2;
+	RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+	RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
 	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
 	{
 		Error_Handler();
@@ -191,15 +192,14 @@ void SystemClock_Config(void)
 	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
 	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
 	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
 	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_3) != HAL_OK)
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_1) != HAL_OK)
 	{
 		Error_Handler();
 	}
 }
-#endif
 
 #ifdef UartPrintf
 PUTCHAR_PROTOTYPE
@@ -210,20 +210,28 @@ PUTCHAR_PROTOTYPE
 }
 #endif
 
-#ifdef LOG_DEBUG
-void Addto_osPrintf(char *format, ...)
+/**
+ * @brief  Period elapsed callback in non blocking mode
+ * @note   This function is called  when TIM2 interrupt took place, inside
+ * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+ * a global variable "uwTick" used as application time base.
+ * @param  htim : TIM handle
+ * @retval None
+ */
+uint32_t tim6_cache = 0;
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	va_list args;
-	va_start(args, format);
-	char buffer[100];
-	vsprintf(buffer, format, args);
-	va_end(args);
-	// char str[100] = "Output: ";
-	strcat(LOG_MSG, buffer);
-	// printf("%s\n", str);
-}
-#endif
+	if (htim->Instance == TIM2)
+	{
+		eos_tick();		//eventos系统的嘀嗒时间
+		HAL_IncTick();
+		tim6_cache++;
 
+	} else if (htim->Instance == TIM6) {
+		TIM6tick_2us++;
+	}
+
+}
 
 #if 1
 /**
@@ -238,157 +246,6 @@ void Error_Handler(void)
 	}
 }
 #endif
-
-
-/**
-  * @brief  Output Compare callback in non blocking mode 
-  * @param  htim : TIM OC handle
-  * @retval None
-  */
-void HAL_TIM_OC_DelayElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	uint32_t uhCapture = 0;
-	//LOG("oc HAL_TIM_OC_DelayElapsedCallback \r\n");
-	//uint32_t uhCapture = 0;
-  /* TIM3_CH1 toggling with frequency = 195 Hz */
-  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_1)
-  {
-	uhCapture1 = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_1);
-	LOG("ch1 uhCapture : %ld, uhCCR1_Val : %ld\r\n", uhCapture1, uhCCR1_Val);
-	if (uhCapture1 >= 2000)
-	{
-		HAL_TIM_OC_Stop_IT(htim, TIM_CHANNEL_1);
-		//uhCapture1 = 200;
-	}
-	//if (uhCapture == uhCCR1_Val) uhCapture = 600;
-	//else uhCapture = uhCCR1_Val;
-	/* Set the Capture Compare Register value */
-	if (uhCapture_N == 0)
-    {
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (uhCapture1 + 200));
-		uhCapture_N++;
-	} else if (uhCapture_N == 1)
-	{
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (uhCapture1 + 1000));
-		uhCapture_N++;
-	} else 
-	{
-		__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (uhCapture1 + 200));
-		uhCapture_N = 0;
-	}
-	//HAL_TIM_OC_Start_IT(htim, TIM_CHANNEL_1);
-  }
-  
-  /* TIM3_CH2 toggling with frequency = 390 Hz */
-  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
-  {
-    uhCapture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_2);
-	LOG("ch2... uhCapture : %ld,  uhCCR2_Val : %ld\r\n", uhCapture, uhCCR2_Val);
-    /* Set the Capture Compare Register value */
-    __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_2, (uhCapture + uhCCR2_Val));   
-  }
-  
-  /* TIM3_CH3 toggling with frequency = 780 Hz */
-  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_3)
-  {
-    uhCapture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_3);
-    /* Set the Capture Compare Register value */
-    __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_3, (uhCapture + uhCCR3_Val));
-  }
-  
-  /* TIM3_CH4 toggling with frequency = 1560 Hz */
-  if(htim->Channel == HAL_TIM_ACTIVE_CHANNEL_4)
-  {
-    uhCapture = HAL_TIM_ReadCapturedValue(htim, TIM_CHANNEL_4);
-    /* Set the Capture Compare Register value */
-    __HAL_TIM_SET_COMPARE(htim, TIM_CHANNEL_4, (uhCapture + uhCCR4_Val));
-  }
-}
-
-void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim)
-{
-	if (htim->Instance == TIM3)
-	{
-		LOG("pwm pulse finished time : %ld\r\n", HAL_GetTick());
-	}
-}
-/**
- * @brief  Period elapsed callback in non blocking mode
- * @note   This function is called  when TIM2 interrupt took place, inside
- * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
- * a global variable "uwTick" used as application time base.
- * @param  htim : TIM handle
- * @retval None
- */
-void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
-{
-	if (htim->Instance == TIM3)
-	{
-		LOG("time : %ld\r\n", HAL_GetTick());
-	}
-	if (htim->Instance == TIM2)
-	{
-		HAL_IncTick();
-		//LOG("hal inctick\r\n");
-	}
-  	// Handle CANOpen app interrupts
-  	if (htim->Instance == TIM14)		//canopenNodeSTM32->timerHandle) 
-	{
-		LOG("can open app interrupt\r\n");
-      	canopen_app_interrupt();
-  	}
-}
-
-
-/**
- * @brief EXTI line detection callbacks
- * @param GPIO_Pin: Specifies the pins connected EXTI line
- * @retval None
- */
-
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	switch (GPIO_Pin)
-	{
-		#if defined(DEVBoard) || defined(DEVBoardYD)
-		case KEY_Pin:
-			//CHIPH[D_I_Q_Chip_1].isChipEnable = 1;
-			LOGI("DEV button........%ld\r\n", HAL_GetTick());
-			//uhCapture = HAL_TIM_ReadCapturedValue(&htim3, TIM_CHANNEL_1);
-			__HAL_TIM_SET_CAPTUREPOLARITY(&htim3, TIM_CHANNEL_1, TIM_OCPOLARITY_HIGH);
-			__HAL_TIM_SET_COMPARE(&htim3, TIM_CHANNEL_1, (uhCCR1_Val));
-			if (HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_1) != HAL_OK)
-  			{
-    			/* PWM Generation Error */
-    			Error_Handler();
-  			}
-			//if (HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_2) != HAL_OK)
-  			//{
-    			/* PWM Generation Error */
-    		//	Error_Handler();
-  			//}
-			//if (HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_3) != HAL_OK)
-  			//{
-    			/* PWM Generation Error */
-    	//		Error_Handler();
-  		//	}
-		//	if (HAL_TIM_OC_Start_IT(&htim3, TIM_CHANNEL_4) != HAL_OK)
-  		//	{
-    			/* PWM Generation Error */
-    	//		Error_Handler();
-  		//	}
-			//HAL_TIM_Base_Start_IT(&htim14);
-			break;
-		#endif
-		case ZRC_IN9_Pin:
-
-			LOG("zrc int 9, start delay ms \r\n");
-			break;
-		default:
-			LOGE("int gpio pin not found!");
-	}
-}
-
 
 #ifdef USE_FULL_ASSERT
 /**
