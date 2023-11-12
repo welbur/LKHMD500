@@ -40,49 +40,59 @@ void MX_GPIO_Init(void)
 	__HAL_RCC_GPIOD_CLK_ENABLE();
 
 	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(PowerM_1_EN_Port, PowerM_1_EN, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(PowerM_2_EN_Port, PowerM_2_EN, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(PowerM_3_EN_Port, PowerM_3_EN, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(DCM1_EN_Port, DCM1_EN_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(DCM2_EN_Port, DCM2_EN_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(DCM3_EN_Port, DCM3_EN_Pin, GPIO_PIN_RESET);
 
 	/*Configure GPIO pin Output Level */
-	HAL_GPIO_WritePin(PowerM_4_EN_Port, PowerM_4_EN, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(PowerM_5_EN_Port, PowerM_5_EN, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(DCM4_EN_Port, DCM4_EN_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(DCM5_EN_Port, DCM5_EN_Pin, GPIO_PIN_RESET);
 
 	/*Configure GPIO pin Output Level */
 	HAL_GPIO_WritePin(WorkLed_GPIO_Port, WorkLed_Pin, GPIO_PIN_RESET);
 
-	/*Configure GPIO pins : PowerM_1_EN_Pin PowerM_2_EN_Pin PowerM_3_EN_Pin PowerM_4_EN_Pin PowerM_5_EN_Pin*/
-	GPIO_InitStruct.Pin = PowerM_1_EN;
+	/*Configure GPIO pin Output Level */
+	HAL_GPIO_WritePin(D51_RSTn_Port, D51_RSTn_Pin, GPIO_PIN_SET);
+
+	/*Configure GPIO pins : D51_RSTn*/
+	GPIO_InitStruct.Pin = D51_RSTn_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(PowerM_1_EN_Port, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = PowerM_2_EN;
+	HAL_GPIO_Init(D51_RSTn_Port, &GPIO_InitStruct);
+
+	/*Configure GPIO pins : DCM1_EN_Pin DCM2_EN_Pin DCM3_EN_Pin DCM4_EN_Pin DCM5_EN_Pin*/
+	GPIO_InitStruct.Pin = DCM1_EN_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(PowerM_2_EN_Port, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = PowerM_3_EN;
+	HAL_GPIO_Init(DCM1_EN_Port, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = DCM2_EN_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(PowerM_3_EN_Port, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = PowerM_4_EN;
+	HAL_GPIO_Init(DCM2_EN_Port, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = DCM3_EN_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(PowerM_4_EN_Port, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = PowerM_5_EN;
+	HAL_GPIO_Init(DCM3_EN_Port, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = DCM4_EN_Pin;
 	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
 	GPIO_InitStruct.Pull = GPIO_NOPULL;
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-	HAL_GPIO_Init(PowerM_5_EN_Port, &GPIO_InitStruct);
+	HAL_GPIO_Init(DCM4_EN_Port, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = DCM5_EN_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(DCM5_EN_Port, &GPIO_InitStruct);
 
 #ifdef DEVBoardG4
   	/*Configure GPIO pin : KEY_Pin_Pin */
   	GPIO_InitStruct.Pin = KEY_Pin;
   	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  	GPIO_InitStruct.Pull = GPIO_PULLUP;
+  	GPIO_InitStruct.Pull = GPIO_PULLUP;	//GPIO_NOPULL;
   	HAL_GPIO_Init(KEY_GPIO_Port, &GPIO_InitStruct);
 #endif
 	/*Configure GPIO pin : WorkLed_Pin */
@@ -92,36 +102,73 @@ void MX_GPIO_Init(void)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(WorkLed_GPIO_Port, &GPIO_InitStruct);
 
-	/*Configure GPIO pins : PowerM_1_Fault_Pin PowerM_2_Fault_Pin PowerM_3_Fault_Pin PowerM_4_Fault_Pin
-							 PowerM_5_Fault_Pin */
-	GPIO_InitStruct.Pin = PowerM_1_Fault;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(PowerM_1_Fault_Port, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = PowerM_2_Fault;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(PowerM_2_Fault_Port, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = PowerM_3_Fault;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(PowerM_3_Fault_Port, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = PowerM_4_Fault;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(PowerM_4_Fault_Port, &GPIO_InitStruct);
-	GPIO_InitStruct.Pin = PowerM_5_Fault;
-	GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-	GPIO_InitStruct.Pull = GPIO_NOPULL;
-	HAL_GPIO_Init(PowerM_5_Fault_Port, &GPIO_InitStruct);
+#if 1
+	/*Configure GPIO pins : DCM1_Fault_Pin DCM2_Fault_Pin DCM3_Fault_Pin DCM4_Fault_Pin
+							 DCM5_Fault_Pin */
+	GPIO_InitStruct.Pin = DCM1_Fault_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;	//GPIO_MODE_IT_RISING;	//GPIO_MODE_IT_RISING;
+	GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+	HAL_GPIO_Init(DCM1_Fault_Port, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = DCM2_Fault_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(DCM2_Fault_Port, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = DCM3_Fault_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(DCM3_Fault_Port, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = DCM4_Fault_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(DCM4_Fault_Port, &GPIO_InitStruct);
+#ifndef DEVBoardG4
+	GPIO_InitStruct.Pin = DCM5_Fault_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(DCM5_Fault_Port, &GPIO_InitStruct);
+#endif
+#endif
 
+#if 1
+	/*Configure GPIO pins : DCM1_Pdet DCM2_Pdet DCM3_Pdet DCM4_Pdet
+							 DCM5_Pdet */
+	GPIO_InitStruct.Pin = DCM1_Pdet_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(DCM1_Pdet_Port, &GPIO_InitStruct);
+	GPIO_InitStruct.Pin = DCM2_Pdet_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(DCM2_Pdet_Port, &GPIO_InitStruct);
+
+	GPIO_InitStruct.Pin = DCM3_Pdet_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(DCM3_Pdet_Port, &GPIO_InitStruct);
+
+	GPIO_InitStruct.Pin = DCM4_Pdet_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(DCM4_Pdet_Port, &GPIO_InitStruct);
+
+	GPIO_InitStruct.Pin = DCM5_Pdet_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+	GPIO_InitStruct.Pull = GPIO_PULLUP;
+	HAL_GPIO_Init(DCM5_Pdet_Port, &GPIO_InitStruct);
+
+#endif
+#if 0
 	/* EXTI interrupt init*/
-	HAL_NVIC_SetPriority(EXTI3_IRQn, 5, 0);
+	HAL_NVIC_SetPriority(EXTI3_IRQn, 5, 10);
 	HAL_NVIC_EnableIRQ(EXTI3_IRQn);
 
-	HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 0);
+	HAL_NVIC_SetPriority(EXTI4_IRQn, 5, 10);
 	HAL_NVIC_EnableIRQ(EXTI4_IRQn);
 
-	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 0);
+	HAL_NVIC_SetPriority(EXTI9_5_IRQn, 5, 10);
 	HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
+	HAL_NVIC_SetPriority(EXTI15_10_IRQn, 5, 10);
+	HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+#endif
 }

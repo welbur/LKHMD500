@@ -11,13 +11,19 @@
 #include "BoardConfig.h"
 //#include "ErrorInfo.h"
 
-extern DMA_HandleTypeDef hdma_dac1_ch1;
-extern DMA_HandleTypeDef hdma_dac1_ch2;
-extern DMA_HandleTypeDef hdma_dac2_ch1;
-extern DMA_HandleTypeDef hdma_dac3_ch1;
-extern DMA_HandleTypeDef hdma_dac4_ch1;
+extern DAC_HandleTypeDef hdac1;
+extern DAC_HandleTypeDef hdac2;
+extern DAC_HandleTypeDef hdac3;
+extern DAC_HandleTypeDef hdac4;
+extern OPAMP_HandleTypeDef hopamp1;
+extern OPAMP_HandleTypeDef hopamp4;
 
-void MX_ADC1_Init(void);
+void MX_DAC1_Init(void);
+void MX_DAC2_Init(void);
+void MX_DAC3_Init(void);
+void MX_DAC4_Init(void);
+void MX_OPAMP1_Init(void);
+void MX_OPAMP4_Init(void);
 
 void Error_Handler(void);
 

@@ -73,10 +73,10 @@ typedef enum
  *  |_________________|_____________|_____________|______________|
  * 状态值有3种 ： 0x00  等待初始化      0x01  设备已连接      0x02  设备未连接  （已初始化的状态是 0x01 或者0x02）
 */    
-//const uint8_t s_WaitInit        = 0x00;
-//const uint8_t s_Connected       = 0x01;
-//const uint8_t s_DisConnected    = 0x02;
-//const char* getDeviceState_Log[]         = {"Wait Device Init", "Device Connected", "Device Disconnected"};
+const uint8_t s_WaitInit        = 0x00;
+const uint8_t s_Connected       = 0x01;
+const uint8_t s_DisConnected    = 0x02;
+const char* getDeviceState_Log[]         = {"Wait Device Init", "Device Connected", "Device Disconnected"};
 
 /**
  * 每次添加新的参数，都在这里面添加；同步的需要把 ParaList_MaxNum 数量改下
@@ -109,7 +109,6 @@ const uint16_t BodyDataType_DEFTYPE_UINT8            = 0x0005;
 const uint16_t BodyDataType_DEFTYPE_UINT16           = 0x0006;
 const uint16_t BodyDataType_DEFTYPE_UINT32           = 0x0007;
 const uint16_t BodyDataType_DEFTYPE_REAL32           = 0x0008;  //单精度浮点数
-const uint16_t BodyDataType_DEFTYPE_REAL64           = 0x0011;  //双精度浮点数
 
 //body的访问属性 （Write + OBJACCESS_RXPDOMAPPING)   （Read + OBJACCESS_TXPDOMAPPING)
 const uint16_t BodyAccess_WRITE                      = 0x0038;
@@ -125,24 +124,21 @@ const uint16_t BodyDataBitLen_UINT8                  = 8;
 const uint16_t BodyDataBitLen_UINT16                 = 16;
 const uint16_t BodyDataBitLen_UINT32                 = 32;
 const uint16_t BodyDataBitLen_REAL32                 = 32;
-const uint16_t BodyDataBitLen_REAL64                 = 64;
 
-#if 0
 //对象(属性)的相关参数
 typedef struct
 {
     uint16_t        ObjAddr;            //同类型的对象的起始地址
-//    uint16_t        ObjNum;             //同类型的对象的数量 
+    uint16_t        ObjNum;             //同类型的对象的数量 
     uint16_t        ObjCode;            //对象代码
     char            ObjName[30];        //对象名称
-    void            *DataValue;          //对象的数值
     uint16_t        BodyDataType;       //body的数据类型
     uint16_t        BodyAccess;         //body的访问属性
     uint16_t        BodyDataBitLen;     //body的数据位长
     uint16_t        BodyNum;            //body的数量
     char            BodyName[30];       //body名称
 }OBJHandle;//对象的句柄
-#endif
+
 
 /**********************************************/
 /*      所要添加的对象(属性) 都统一在这里定义       */
@@ -150,14 +146,10 @@ typedef struct
 //#define ParaList_MaxNum         14   //与对象地址的数量对应
 
 //对象地址
-const uint16_t ObjAddr_INData_StartAddr   = 0x6000;     //输入属性的起始地址
-
 const uint16_t ObjAddr_DCModule_Volt      = 0x6000;     //直流模块当前的输出电压值，
 const uint16_t ObjAddr_DCModule_Curr      = 0x6010;     //直流模块当前的输出电流值
 const uint16_t ObjAddr_DevState           = 0x6020;     //设备的当前状态：包含当前的工作状态 和 错误状态
 
-
-const uint16_t ObjAddr_OUTData_StartAddr  = 0x7000;     //输出属性的起始地址
 const uint16_t ObjAddr_DevEnable          = 0x7000;     //整个设备的使能信号
 const uint16_t ObjAddr_DCModule1_SetCurr  = 0x7001;     //设置直流模块1的输出电流值
 const uint16_t ObjAddr_DCModule2_SetCurr  = 0x7002;     //设置直流模块2的输出电流值
@@ -259,7 +251,7 @@ const uint32_t productCode              = 0x20231002;   //变更属性表需要�
 const uint32_t revisionNumber           = 0x00000001;   //修订号
 const uint32_t productSN                = 0x20230200;   //产品序号 前四个表示年份，后4个表示型号 0x20230200表示2023年开发的型号为LKHM200
 const char CompanyName[]                = "Butup\0";
-//const char* Result_Log[]                = {"Error!", "Success!"};          //const String Result_Log[]               = {"Error!", "Success!"};
+const char* Result_Log[]                = {"Error!", "Success!"};          //const String Result_Log[]               = {"Error!", "Success!"};
 //char *DeviceName;   //[6];
 //const PROGMEM char DeviceName[]                       = "ESSR1\0";            
 

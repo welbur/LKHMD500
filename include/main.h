@@ -92,6 +92,7 @@ extern "C"
 #include "MSP_GPIO.h"
 #include "MSP_USART.h"
 #include "MSP_ADC.h"
+#include "MSP_DAC.h"
 #include "MSP_TIM.h"
 #include "MSP_DMA.h"
 
@@ -100,6 +101,8 @@ extern "C"
 #include "LOG.h"
 
 #include "EtherCatPDO.h"
+#include "DCMCtrl.h"
+#include "BoardConfig.h"
 //#include "BackPanelTrans.h"
 //#include "FrameFormat.h"
 

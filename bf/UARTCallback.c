@@ -47,7 +47,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle) {
 		{
 			
 			_etherCatH->RecvBufCnt++;
-			_etherCatH->RecvLastTime = HAL_getTick_us();
+			_etherCatH->RecvLastTime = HAL_getTick_2us();
 
 		}
 		else

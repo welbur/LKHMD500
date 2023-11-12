@@ -6,85 +6,88 @@
  *                   Author: WU555
  ******************************************************************************
  * @attention      : LKHMD500 MainBoard
- *                   2023-09-26  V0.0.1
+ *                   2023-09-26  V0.0.1     初稿
+ *                   2023-11-03  V0.0.2     PCB画完，重新更新引脚定义
  *
- *       1、usart1用于与LAN9255通信用，采用私有协议，采用DMA
+ *       1、usart1用于与LAN9255通信用，采用私有协议
  *           PC4     ------> USART1_TX
  *           PC5     ------> USART1_RX
  *           BaudRate = 460800
+ *           *  输出控制信号
+ *              PB6  ------> D51_RSTn       用于复位LAN9255
  *
  *       2、usart3用于打印测试信息
  *           PB10    ------> USART3_TX
  *           PB11    ------> USART3_RX
- *           BaudRate = 921600
+ *           BaudRate = 460800
  *
  *       3、电源模块 1 的引脚信息
  *           *  ADC输入
- *              PA0     ------> ADC1_IN1    ------> PowerM_1_Volt   用于检测输出电压
- *              PA1     ------> ADC1_IN2    ------> PowerM_1_Curr   用于检测输出电流
+ *              PC0     ------> ADC2_IN6    ------> DCM1_Volt   用于检测输出电压
+ *              PC1     ------> ADC2_IN7    ------> DCM1_Curr   用于检测输出电流
  *           *  DAC输出
- *              PA2     ------> DAC3_OUT1   ------> PowerM_1_Ictrl  用于控制输出电流大小
- *           *  PWM输出
- *              PC6     ------> TIM3_CH1    ------> PowerM_1_PWM    用以控制输出电流的脉冲
+ *              PA4     ------> DAC1_OUT1   ------> DCM1_Ictrl  用于控制输出电流大小
  *           *  输出控制信号
- *              PA13                        ------> PowerM_1_EN     电源模块的使能信号        
+ *              PC2                         ------> DCM1_EN     电源模块的使能信号        
  *           *  输入信号
- *              PB3                         ------> PowerM_1_Fault  电源模块的错误指示信号
+ *              PC11                        ------> DCM1_Fault  电源模块的错误指示信号
+ *           *  输入信号
+ *              PB9                         ------> DCM1_Pdet   用于检测是否有输入电源接入
  * 
  *       4、电源模块 2 的引脚信息
  *           *  ADC输入
- *              PC0     ------> ADC2_IN6    ------> PowerM_2_Volt   用于检测输出电压
- *              PC1     ------> ADC2_IN7    ------> PowerM_2_Curr   用于检测输出电流
+ *              PA0     ------> ADC1_IN1    ------> DCM2_Volt   用于检测输出电压
+ *              PA1     ------> ADC1_IN2    ------> DCM2_Curr   用于检测输出电流
  *           *  DAC输出
- *              PA4     ------> DAC1_OUT1   ------> PowerM_2_Ictrl  用于控制输出电流大小
- *           *  PWM输出
- *              PC7     ------> TIM3_CH2    ------> PowerM_2_PWM    用以控制输出电流的脉冲
+ *              PA2     ------> OPAMP1_VOUT ------> DCM2_Ictrl  用于控制输出电流大小
  *           *  输出控制信号
- *              PA14                        ------> PowerM_2_EN     电源模块的使能信号        
+ *              PA3                         ------> DCM2_EN     电源模块的使能信号        
  *           *  输入信号
- *              PB4                         ------> PowerM_2_Fault  电源模块的错误指示信号
+ *              PC10                        ------> DCM2_Fault  电源模块的错误指示信号
+ *           *  输入信号
+ *              PB7                         ------> DCM2_Pdet   用于检测是否有输入电源接入
  *
  *       5、电源模块 3 的控制信息
  *           *  ADC输入
- *              PB0     ------> ADC3_IN12   ------> PowerM_3_Volt   用于检测输出电压
- *              PB1     ------> ADC3_IN1    ------> PowerM_3_Curr   用于检测输出电流
+ *              PB0     ------> ADC3_IN12   ------> DCM3_Volt   用于检测输出电压
+ *              PB1     ------> ADC3_IN1    ------> DCM3_Curr   用于检测输出电流
  *           *  DAC输出
- *              PA5     ------> DAC1_OUT2   ------> PowerM_3_Ictrl  用于控制输出电流大小
- *           *  PWM输出
- *              PC8     ------> TIM3_CH3    ------> PowerM_3_PWM    用以控制输出电流的脉冲
+ *              PA5     ------> DAC1_OUT2   ------> DCM3_Ictrl  用于控制输出电流大小
  *           *  输出控制信号
- *              PA15                        ------> PowerM_3_EN     电源模块的使能信号        
+ *              PB2                         ------> DCM3_EN     电源模块的使能信号        
  *           *  输入信号
- *              PB5                         ------> PowerM_3_Fault  电源模块的错误指示信号
+ *              PC12                        ------> DCM3_Fault  电源模块的错误指示信号
+ *           *  输入信号
+ *              PB5                         ------> DCM3_Pdet    用于检测是否有输入电源接入
  * 
  *       6、电源模块 4 的控制信息
  *           *  ADC输入
- *              PB14    ------> ADC4_IN4    ------> PowerM_4_Volt   用于检测输出电压
- *              PB15    ------> ADC4_IN5    ------> PowerM_4_Curr   用于检测输出电流
+ *              PB14    ------> ADC4_IN4    ------> DCM4_Volt   用于检测输出电压
+ *              PB15    ------> ADC4_IN5    ------> DCM4_Curr   用于检测输出电流
  *           *  DAC输出
- *              PA6     ------> DAC2_OUT1   ------> PowerM_4_Ictrl  用于控制输出电流大小
- *           *  PWM输出
- *              PC9     ------> TIM3_CH4    ------> PowerM_4_PWM    用以控制输出电流的脉冲
+ *              PB12    ------> OPAMP4_VOUT ------> DCM4_Ictrl  用于控制输出电流大小
  *           *  输出控制信号
- *              PA16                        ------> PowerM_4_EN     电源模块的使能信号        
+ *              PB13                        ------> DCM4_EN     电源模块的使能信号        
  *           *  输入信号
- *              PB6                         ------> PowerM_4_Fault  电源模块的错误指示信号
+ *              PC6                         ------> DCM4_Fault  电源模块的错误指示信号
+ *           *  输入信号
+ *              PB4                         ------> DCM4_Pdet    用于检测是否有输入电源接入
  * 
  *       7、电源模块 5 的控制信息
  *           *  ADC输入
- *              PA8     ------> ADC5_IN1    ------> PowerM_5_Volt   用于检测输出电压
- *              PA9     ------> ADC5_IN2    ------> PowerM_5_Curr   用于检测输出电流
+ *              PA9     ------> ADC5_IN2    ------> DCM5_Volt   用于检测输出电压
+ *              PA8     ------> ADC5_IN1    ------> DCM5_Curr   用于检测输出电流
  *           *  DAC输出
- *              PB12    ------> DAC4_OUT1   ------> PowerM_5_Ictrl  用于控制输出电流大小
- *           *  PWM输出
- *              PA11    ------> TIM4_CH1    ------> PowerM_5_PWM    用以控制输出电流的脉冲
+ *              PA6     ------> DAC2_OUT1   ------> DCM5_Ictrl  用于控制输出电流大小
  *           *  输出控制信号
- *              PA17                        ------> PowerM_5_EN     电源模块的使能信号        
+ *              PC9                         ------> DCM5_EN     电源模块的使能信号        
  *           *  输入信号
- *              PB7                         ------> PowerM_5_Fault  电源模块的错误指示信号
+ *              PC8                         ------> DCM5_Fault  电源模块的错误指示信号
+ *           *  输入信号
+ *              PB3                         ------> DCM5_Pdet    用于检测是否有输入电源接入
  * 
  *       8、WorkLed
- *              PD2     ------> WorkLed
+ *              PC7     ------> WorkLed
  * 
  *       9、开发板中的引脚定义
  *              PC8     ------> WorkLed
@@ -107,28 +110,35 @@
 
 
 /*********************************************************************************
- * @brief 1、 usart1用于与LAN9255通信用，采用私有协议，采用DMA
- *              PC4     ------> USART1_TX
- *              PC5     ------> USART1_RX
- *              BaudRate = 460800
+ * @brief 1、 usart1用于与LAN9255通信用，采用私有协议
+ *           PC4     ------> USART1_TX
+ *           PC5     ------> USART1_RX
+ *           BaudRate = 460800
+ *           *  输出控制信号
+ *              PB6  ------> D51_RSTn       用于复位LAN9255
  */
 #ifdef LKHMD500MainB
-#define USART1_TX_PIN                    GPIO_PIN_4
-#define USART1_RX_PIN                    GPIO_PIN_5
+#define USART1_TX_Pin                    GPIO_PIN_4
+#define USART1_RX_Pin                    GPIO_PIN_5
 #define USART1_GPIO_PORT                 GPIOC
 #define USART1_GPIO_CLK_ENABLE()         __HAL_RCC_GPIOC_CLK_ENABLE()
 #define USART1_GPIO_CLK_DISABLE()        __HAL_RCC_GPIOC_CLK_DISABLE()
+//D51_RSTn 用于复位LAN9255
+#define D51_RSTn_Pin                     GPIO_PIN_6
+#define D51_RSTn_Port                    GPIOB
+#define D51_RSTn_Pin_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
+#define D51_RSTn_Pin_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
 #endif
 
 /*********************************************************************************
  * @brief 2、 usart3用于打印测试信息
  *              PB10    ------> USART3_TX
  *              PB11    ------> USART3_RX
- *              BaudRate = 921600
+ *              BaudRate = 460800
  */
 #ifdef LKHMD500MainB
-#define USART3_TX_PIN                    GPIO_PIN_10
-#define USART3_RX_PIN                    GPIO_PIN_11
+#define USART3_TX_Pin                    GPIO_PIN_10
+#define USART3_RX_Pin                    GPIO_PIN_11
 #define USART3_GPIO_PORT                 GPIOB
 #define USART3_GPIO_CLK_ENABLE()         __HAL_RCC_GPIOB_CLK_ENABLE()
 #define USART3_GPIO_CLK_DISABLE()        __HAL_RCC_GPIOB_CLK_DISABLE()
@@ -137,286 +147,292 @@
 /*********************************************************************************
  * @brief 3、 电源模块 1 的引脚信息
  *           *  ADC输入
- *              PA0     ------> ADC1_IN1    ------> PowerM_1_Volt   用于检测输出电压
- *              PA1     ------> ADC1_IN2    ------> PowerM_1_Curr   用于检测输出电流
+ *              PC0     ------> ADC2_IN6    ------> DCM1_Volt   用于检测输出电压
+ *              PC1     ------> ADC2_IN7    ------> DCM1_Curr   用于检测输出电流
  *           *  DAC输出
- *              PA2     ------> DAC3_OUT1   ------> PowerM_1_Ictrl  用于控制输出电流大小
- *           *  PWM输出
- *              PC6     ------> TIM3_CH1    ------> PowerM_1_PWM    用以控制输出电流的脉冲
+ *              PA4     ------> DAC1_OUT1   ------> DCM1_Ictrl  用于控制输出电流大小
  *           *  输出控制信号
- *              PA13                        ------> PowerM_1_EN     电源模块的使能信号        
+ *              PC2                         ------> DCM1_EN     电源模块的使能信号        
  *           *  输入信号
- *              PB3                         ------> PowerM_1_Fault  电源模块的错误指示信号
+ *              PC11                        ------> DCM1_Fault  电源模块的错误指示信号
+ *           *  输入信号
+ *              PB9                         ------> DCM1_Pdet   用于检测是否有输入电源接入
  */
 //ADC引脚
 #ifdef LKHMD500MainB
-#ifndef DEVBoardG4
-#define ADC1_IN1_Pin                          GPIO_PIN_0  
-#define PowerM_1_Volt                         ADC1_IN1_Pin
-#define PowerM_1_Volt_Port                    GPIOA
-#define PowerM_1_Volt_CLK_ENABLE()            __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_1_Volt_CLK_DISABLE()           __HAL_RCC_GPIOA_CLK_DISABLE()
-#endif
-#define ADC1_IN2_Pin                          GPIO_PIN_1
-#define PowerM_1_Curr                         ADC1_IN2_Pin
-#define PowerM_1_Curr_Port                    GPIOA
-#define PowerM_1_Curr_CLK_ENABLE()            __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_1_Curr_CLK_DISABLE()           __HAL_RCC_GPIOA_CLK_DISABLE()
+
+#define ADC2_IN6_Pin                      GPIO_PIN_0  
+#define DCM1_Volt_Pin                     ADC2_IN6_Pin
+#define DCM1_Volt_Port                    GPIOC
+#define DCM1_Volt_Pin_CLK_ENABLE()        __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM1_Volt_Pin_CLK_DISABLE()       __HAL_RCC_GPIOC_CLK_DISABLE()
+
+#define ADC2_IN7_Pin                      GPIO_PIN_1
+#define DCM1_Curr_Pin                     ADC2_IN7_Pin
+#define DCM1_Curr_Port                    GPIOC
+#define DCM1_Curr_Pin_CLK_ENABLE()        __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM1_Curr_Pin_CLK_DISABLE()       __HAL_RCC_GPIOC_CLK_DISABLE()
 
 //DAC引脚                          
-#define DAC3_OUT1_Pin                         GPIO_PIN_2
-#define PowerM_1_Ictrl                        DAC3_OUT1_Pin
-#define PowerM_1_Ictrl_Port                   GPIOA
-#define PowerM_1_Ictrl_CLK_ENABLE()           __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_1_Ictrl_CLK_DISABLE()          __HAL_RCC_GPIOA_CLK_DISABLE()
-
-//PWM输出引脚
-#define TIM3_CH1_Pin                          GPIO_PIN_6
-#define PowerM_1_PWM                          TIM3_CH1_Pin
-#define PowerM_1_PWM_Port                     GPIOC
-#define PowerM_1_PWM_CLK_ENABLE()             __HAL_RCC_GPIOC_CLK_ENABLE()
-#define PowerM_1_PWM_CLK_DISABLE()            __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DAC1_OUT1_Pin                     GPIO_PIN_4
+#define DCM1_Ictrl_Pin                    DAC1_OUT1_Pin
+#define DCM1_Ictrl_Port                   GPIOA
+#define DCM1_Ictrl_Pin_CLK_ENABLE()       __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM1_Ictrl_Pin_CLK_DISABLE()      __HAL_RCC_GPIOA_CLK_DISABLE()
 
 //输出控制信号
-#define PowerM_1_EN                           GPIO_PIN_13
-#define PowerM_1_EN_Port                      GPIOA
-#define PowerM_1_EN_CLK_ENABLE()              __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_1_EN_CLK_DISABLE()             __HAL_RCC_GPIOA_CLK_DISABLE()
+#define DCM1_EN_Pin                       GPIO_PIN_2
+#define DCM1_EN_Port                      GPIOC
+#define DCM1_EN_Pin_CLK_ENABLE()          __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM1_EN_Pin_CLK_DISABLE()         __HAL_RCC_GPIOC_CLK_DISABLE()
 
 //输入信号
-#define PowerM_1_Fault                        GPIO_PIN_3
-#define PowerM_1_Fault_Port                   GPIOB
-#define PowerM_1_Fault_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
-#define PowerM_1_Fault_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
-#define PowerM_1_Fault_EXTI_IRQn              EXTI3_IRQn
+#define DCM1_Fault_Pin                    GPIO_PIN_11
+#define DCM1_Fault_Port                   GPIOC
+#define DCM1_Fault_Pin_CLK_ENABLE()       __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM1_Fault_Pin_CLK_DISABLE()      __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DCM1_Fault_Pin_EXTI_IRQn          EXTI15_10_IRQn
+
+//输入信号
+#define DCM1_Pdet_Pin                      GPIO_PIN_9
+#define DCM1_Pdet_Port                     GPIOB
+#define DCM1_Pdet_Pin_CLK_ENABLE()         __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM1_Pdet_Pin_CLK_DISABLE()        __HAL_RCC_GPIOB_CLK_DISABLE()
+#define DCM1_Pdet_Pin_EXTI_IRQn            EXTI9_5_IRQn
+
 #endif
 
 /*********************************************************************************
  * @brief 4、 电源模块 2 的引脚信息
  *           *  ADC输入
- *              PC0     ------> ADC2_IN6    ------> PowerM_2_Volt   用于检测输出电压
- *              PC1     ------> ADC2_IN7    ------> PowerM_2_Curr   用于检测输出电流
+ *              PA0     ------> ADC1_IN1    ------> DCM2_Volt   用于检测输出电压
+ *              PA1     ------> ADC1_IN2    ------> DCM2_Curr   用于检测输出电流
  *           *  DAC输出
- *              PA4     ------> DAC1_OUT1   ------> PowerM_2_Ictrl  用于控制输出电流大小
- *           *  PWM输出
- *              PC7     ------> TIM3_CH2    ------> PowerM_2_PWM    用以控制输出电流的脉冲
+ *              PA2     ------> OPAMP1_VOUT ------> DCM2_Ictrl  用于控制输出电流大小
  *           *  输出控制信号
- *              PA14                        ------> PowerM_2_EN     电源模块的使能信号        
+ *              PA3                         ------> DCM2_EN     电源模块的使能信号        
  *           *  输入信号
- *              PB4                         ------> PowerM_2_Fault  电源模块的错误指示信号
+ *              PC10                        ------> DCM2_Fault  电源模块的错误指示信号
+ *           *  输入信号
+ *              PB7                         ------> DCM2_Pdet   用于检测是否有输入电源接入
  */
 #ifdef LKHMD500MainB
 //ADC引脚
-#define ADC2_IN6_Pin                          GPIO_PIN_0  
-#define PowerM_2_Volt                         ADC2_IN6_Pin
-#define PowerM_2_Volt_Port                    GPIOC
-#define PowerM_2_Volt_CLK_ENABLE()            __HAL_RCC_GPIOC_CLK_ENABLE()
-#define PowerM_2_Volt_CLK_DISABLE()           __HAL_RCC_GPIOC_CLK_DISABLE()
-#define ADC2_IN7_Pin                          GPIO_PIN_1
-#define PowerM_2_Curr                         ADC2_IN7_Pin
-#define PowerM_2_Curr_Port                    GPIOC
-#define PowerM_2_Curr_CLK_ENABLE()            __HAL_RCC_GPIOC_CLK_ENABLE()
-#define PowerM_2_Curr_CLK_DISABLE()           __HAL_RCC_GPIOC_CLK_DISABLE()
+#ifndef DEVBoardG4
+#define ADC1_IN1_Pin                      GPIO_PIN_0  
+#define DCM2_Volt_Pin                     ADC1_IN1_Pin
+#define DCM2_Volt_Port                    GPIOA
+#define DCM2_Volt_Pin_CLK_ENABLE()        __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM2_Volt_Pin_CLK_DISABLE()       __HAL_RCC_GPIOA_CLK_DISABLE()
+#endif
+#define ADC1_IN2_Pin                      GPIO_PIN_1
+#define DCM2_Curr_Pin                     ADC1_IN2_Pin
+#define DCM2_Curr_Port                    GPIOA
+#define DCM2_Curr_Pin_CLK_ENABLE()        __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM2_Curr_Pin_CLK_DISABLE()       __HAL_RCC_GPIOA_CLK_DISABLE()
 
 //DAC引脚                          
-#define DAC1_OUT1_Pin                         GPIO_PIN_4
-#define PowerM_2_Ictrl                        DAC1_OUT1_Pin
-#define PowerM_2_Ictrl_Port                   GPIOA
-#define PowerM_2_Ictrl_CLK_ENABLE()           __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_2_Ictrl_CLK_DISABLE()          __HAL_RCC_GPIOA_CLK_DISABLE()
-
-//PWM输出引脚
-#define TIM3_CH2_Pin                          GPIO_PIN_7
-#define PowerM_2_PWM                          TIM3_CH2_Pin
-#define PowerM_2_PWM_Port                     GPIOC
-#define PowerM_2_PWM_CLK_ENABLE()             __HAL_RCC_GPIOC_CLK_ENABLE()
-#define PowerM_2_PWM_CLK_DISABLE()            __HAL_RCC_GPIOC_CLK_DISABLE()
+#define OPAMP1_OUT_Pin                    GPIO_PIN_2
+#define DCM2_Ictrl_Pin                    OPAMP1_OUT_Pin
+#define DCM2_Ictrl_Port                   GPIOA
+#define DCM2_Ictrl_Pin_CLK_ENABLE()       __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM2_Ictrl_Pin_CLK_DISABLE()      __HAL_RCC_GPIOA_CLK_DISABLE()
 
 //输出控制信号
-#define PowerM_2_EN                           GPIO_PIN_14
-#define PowerM_2_EN_Port                      GPIOA
-#define PowerM_2_EN_CLK_ENABLE()              __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_2_EN_CLK_DISABLE()             __HAL_RCC_GPIOA_CLK_DISABLE()
+#define DCM2_EN_Pin                       GPIO_PIN_3
+#define DCM2_EN_Port                      GPIOA
+#define DCM2_EN_Pin_CLK_ENABLE()          __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM2_EN_Pin_CLK_DISABLE()         __HAL_RCC_GPIOA_CLK_DISABLE()
 
 //输入信号
-#define PowerM_2_Fault                        GPIO_PIN_4
-#define PowerM_2_Fault_Port                   GPIOB
-#define PowerM_2_Fault_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
-#define PowerM_2_Fault_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
-#define PowerM_2_Fault_EXTI_IRQn              EXTI4_IRQn
+#define DCM2_Fault_Pin                    GPIO_PIN_10
+#define DCM2_Fault_Port                   GPIOC
+#define DCM2_Fault_Pin_CLK_ENABLE()       __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM2_Fault_Pin_CLK_DISABLE()      __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DCM2_Fault_Pin_EXTI_IRQn          EXTI15_10_IRQn
+
+//输入信号
+#define DCM2_Pdet_Pin                     GPIO_PIN_7
+#define DCM2_Pdet_Port                    GPIOB
+#define DCM2_Pdet_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM2_Pdet_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
+#define DCM2_Pdet_Pin_EXTI_IRQn           EXTI9_5_IRQn
 #endif
 
 /*********************************************************************************
  * @brief 5、 电源模块 3 的引脚信息
  *           *  ADC输入
- *              PB0     ------> ADC3_IN12   ------> PowerM_3_Volt   用于检测输出电压
- *              PB1     ------> ADC3_IN1    ------> PowerM_3_Curr   用于检测输出电流
+ *              PB0     ------> ADC3_IN12   ------> DCM3_Volt   用于检测输出电压
+ *              PB1     ------> ADC3_IN1    ------> DCM3_Curr   用于检测输出电流
  *           *  DAC输出
- *              PA5     ------> DAC1_OUT2   ------> PowerM_3_Ictrl  用于控制输出电流大小
- *           *  PWM输出
- *              PC8     ------> TIM3_CH3    ------> PowerM_3_PWM    用以控制输出电流的脉冲
+ *              PA5     ------> DAC1_OUT2   ------> DCM3_Ictrl  用于控制输出电流大小
  *           *  输出控制信号
- *              PA15                        ------> PowerM_3_EN     电源模块的使能信号        
+ *              PB2                         ------> DCM3_EN     电源模块的使能信号        
  *           *  输入信号
- *              PB5                         ------> PowerM_3_Fault  电源模块的错误指示信号
+ *              PC12                        ------> DCM3_Fault  电源模块的错误指示信号
+ *           *  输入信号
+ *              PB5                         ------> DCM3_Pdet    用于检测是否有输入电源接入
  */
 #ifdef LKHMD500MainB
 //ADC引脚
-#define ADC3_IN12_Pin                         GPIO_PIN_0  
-#define PowerM_3_Volt                         ADC3_IN12_Pin
-#define PowerM_3_Volt_Port                    GPIOB
-#define PowerM_3_Volt_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
-#define PowerM_3_Volt_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
-#define ADC3_IN1_Pin                          GPIO_PIN_1
-#define PowerM_3_Curr                         ADC3_IN1_Pin
-#define PowerM_3_Curr_Port                    GPIOB
-#define PowerM_3_Curr_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
-#define PowerM_3_Curr_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
+#define ADC3_IN12_Pin                     GPIO_PIN_0  
+#define DCM3_Volt_Pin                     ADC3_IN12_Pin
+#define DCM3_Volt_Port                    GPIOB
+#define DCM3_Volt_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM3_Volt_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
+
+#define ADC3_IN1_Pin                      GPIO_PIN_1
+#define DCM3_Curr_Pin                     ADC3_IN1_Pin
+#define DCM3_Curr_Port                    GPIOB
+#define DCM3_Curr_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM3_Curr_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
 
 //DAC引脚                          
-#define DAC1_OUT2_Pin                         GPIO_PIN_5
-#define PowerM_3_Ictrl                        DAC1_OUT2_Pin
-#define PowerM_3_Ictrl_Port                   GPIOA
-#define PowerM_3_Ictrl_CLK_ENABLE()           __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_3_Ictrl_CLK_DISABLE()          __HAL_RCC_GPIOA_CLK_DISABLE()
-
-//PWM输出引脚
-#ifndef DEVBoardG4
-#define TIM3_CH3_Pin                          GPIO_PIN_8
-#define PowerM_3_PWM                          TIM3_CH3_Pin
-#define PowerM_3_PWM_Port                     GPIOC
-#define PowerM_3_PWM_CLK_ENABLE()             __HAL_RCC_GPIOC_CLK_ENABLE()
-#define PowerM_3_PWM_CLK_DISABLE()            __HAL_RCC_GPIOC_CLK_DISABLE()
-#endif
+#define DAC1_OUT2_Pin                     GPIO_PIN_5
+#define DCM3_Ictrl_Pin                    DAC1_OUT2_Pin
+#define DCM3_Ictrl_Port                   GPIOA
+#define DCM3_Ictrl_Pin_CLK_ENABLE()       __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM3_Ictrl_Pin_CLK_DISABLE()      __HAL_RCC_GPIOA_CLK_DISABLE()
 
 //输出控制信号
-#define PowerM_3_EN                           GPIO_PIN_15
-#define PowerM_3_EN_Port                      GPIOA
-#define PowerM_3_EN_CLK_ENABLE()              __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_3_EN_CLK_DISABLE()             __HAL_RCC_GPIOA_CLK_DISABLE()
+#define DCM3_EN_Pin                       GPIO_PIN_2
+#define DCM3_EN_Port                      GPIOB
+#define DCM3_EN_Pin_CLK_ENABLE()          __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM3_EN_Pin_CLK_DISABLE()         __HAL_RCC_GPIOB_CLK_DISABLE()
 
 //输入信号
-#define PowerM_3_Fault                        GPIO_PIN_5
-#define PowerM_3_Fault_Port                   GPIOB
-#define PowerM_3_Fault_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
-#define PowerM_3_Fault_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
-#define PowerM_3_Fault_EXTI_IRQn              EXTI5_IRQn
+#define DCM3_Fault_Pin                    GPIO_PIN_12
+#define DCM3_Fault_Port                   GPIOC
+#define DCM3_Fault_Pin_CLK_ENABLE()       __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM3_Fault_Pin_CLK_DISABLE()      __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DCM3_Fault_Pin_EXTI_IRQn          EXTI15_10_IRQn    //EXTI5_IRQn
+
+//输入信号
+#define DCM3_Pdet_Pin                     GPIO_PIN_5
+#define DCM3_Pdet_Port                    GPIOB
+#define DCM3_Pdet_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM3_Pdet_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
+#define DCM3_Pdet_Pin_EXTI_IRQn           EXTI9_5_IRQn
 #endif
 
 /*********************************************************************************
  * @brief 6、 电源模块 4 的引脚信息
  *           *  ADC输入
- *              PB14    ------> ADC4_IN4    ------> PowerM_4_Volt   用于检测输出电压
- *              PB15    ------> ADC4_IN5    ------> PowerM_4_Curr   用于检测输出电流
+ *              PB14    ------> ADC4_IN4    ------> DCM4_Volt   用于检测输出电压
+ *              PB15    ------> ADC4_IN5    ------> DCM4_Curr   用于检测输出电流
  *           *  DAC输出
- *              PA6     ------> DAC2_OUT1   ------> PowerM_4_Ictrl  用于控制输出电流大小
- *           *  PWM输出
- *              PC9     ------> TIM3_CH4    ------> PowerM_4_PWM    用以控制输出电流的脉冲
+ *              PB12    ------> OPAMP4_VOUT ------> DCM4_Ictrl  用于控制输出电流大小
  *           *  输出控制信号
- *              PA16                        ------> PowerM_4_EN     电源模块的使能信号        
+ *              PB13                        ------> DCM4_EN     电源模块的使能信号        
  *           *  输入信号
- *              PB6                         ------> PowerM_4_Fault  电源模块的错误指示信号
+ *              PC6                         ------> DCM4_Fault  电源模块的错误指示信号
+ *           *  输入信号
+ *              PB4                         ------> DCM4_Pdet    用于检测是否有输入电源接入
  */
 #ifdef LKHMD500MainB
 //ADC引脚
-#define ADC4_IN4_Pin                          GPIO_PIN_14  
-#define PowerM_4_Volt                         ADC4_IN4_Pin
-#define PowerM_4_Volt_Port                    GPIOB
-#define PowerM_4_Volt_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
-#define PowerM_4_Volt_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
-#define ADC4_IN5_Pin                          GPIO_PIN_15
-#define PowerM_4_Curr                         ADC4_IN5_Pin
-#define PowerM_4_Curr_Port                    GPIOB
-#define PowerM_4_Curr_CLK_ENABLE()            __HAL_RCC_GPIOB_CLK_ENABLE()
-#define PowerM_4_Curr_CLK_DISABLE()           __HAL_RCC_GPIOB_CLK_DISABLE()
+#define ADC4_IN4_Pin                      GPIO_PIN_14  
+#define DCM4_Volt_Pin                     ADC4_IN4_Pin
+#define DCM4_Volt_Port                    GPIOB
+#define DCM4_Volt_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM4_Volt_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
+
+#define ADC4_IN5_Pin                      GPIO_PIN_15
+#define DCM4_Curr_Pin                     ADC4_IN5_Pin
+#define DCM4_Curr_Port                    GPIOB
+#define DCM4_Curr_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM4_Curr_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
 
 //DAC引脚                          
-#define DAC2_OUT1_Pin                         GPIO_PIN_6
-#define PowerM_4_Ictrl                        DAC2_OUT1_Pin
-#define PowerM_4_Ictrl_Port                   GPIOA
-#define PowerM_4_Ictrl_CLK_ENABLE()           __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_4_Ictrl_CLK_DISABLE()          __HAL_RCC_GPIOA_CLK_DISABLE()
-
-//PWM输出引脚
-#define TIM3_CH4_Pin                          GPIO_PIN_9
-#define PowerM_4_PWM                          TIM3_CH4_Pin
-#define PowerM_4_PWM_Port                     GPIOC
-#define PowerM_4_PWM_CLK_ENABLE()             __HAL_RCC_GPIOC_CLK_ENABLE()
-#define PowerM_4_PWM_CLK_DISABLE()            __HAL_RCC_GPIOC_CLK_DISABLE()
+#define OPAMP4_OUT_Pin                    GPIO_PIN_12
+#define DCM4_Ictrl_Pin                    OPAMP4_OUT_Pin
+#define DCM4_Ictrl_Port                   GPIOB
+#define DCM4_Ictrl_Pin_CLK_ENABLE()       __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM4_Ictrl_Pin_CLK_DISABLE()      __HAL_RCC_GPIOB_CLK_DISABLE()
 
 //输出控制信号
-#define PowerM_4_EN                           GPIO_PIN_10
-#define PowerM_4_EN_Port                      GPIOC
-#define PowerM_4_EN_CLK_ENABLE()              __HAL_RCC_GPIOC_CLK_ENABLE()
-#define PowerM_4_EN_CLK_DISABLE()             __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DCM4_EN_Pin                       GPIO_PIN_13
+#define DCM4_EN_Port                      GPIOB
+#define DCM4_EN_Pin_CLK_ENABLE()          __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM4_EN_Pin_CLK_DISABLE()         __HAL_RCC_GPIOB_CLK_DISABLE()
 
 //输入信号
-#define PowerM_4_Fault                        GPIO_PIN_6
-#define PowerM_4_Fault_Port                   GPIOB
-#define PowerM_4_Fault_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
-#define PowerM_4_Fault_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
-#define PowerM_4_Fault_EXTI_IRQn              EXTI6_IRQn
+#define DCM4_Fault_Pin                    GPIO_PIN_6
+#define DCM4_Fault_Port                   GPIOC
+#define DCM4_Fault_Pin_CLK_ENABLE()       __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM4_Fault_Pin_CLK_DISABLE()      __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DCM4_Fault_Pin_EXTI_IRQn          EXTI9_5_IRQn
+
+//输入信号
+#define DCM4_Pdet_Pin                     GPIO_PIN_4
+#define DCM4_Pdet_Port                    GPIOB
+#define DCM4_Pdet_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM4_Pdet_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
+#define DCM4_Pdet_Pin_EXTI_IRQn           EXTI4_IRQn
 #endif
 
 /*********************************************************************************
  * @brief 7、 电源模块 5 的引脚信息
  *           *  ADC输入
- *              PA8     ------> ADC5_IN1    ------> PowerM_5_Volt   用于检测输出电压
- *              PA9     ------> ADC5_IN2    ------> PowerM_5_Curr   用于检测输出电流
+ *              PA9     ------> ADC5_IN2    ------> DCM5_Volt   用于检测输出电压
+ *              PA8     ------> ADC5_IN1    ------> DCM5_Curr   用于检测输出电流
  *           *  DAC输出
- *              PB12    ------> DAC4_OUT1   ------> PowerM_5_Ictrl  用于控制输出电流大小
- *           *  PWM输出
- *              PA11    ------> TIM4_CH1    ------> PowerM_5_PWM    用以控制输出电流的脉冲
+ *              PA6     ------> DAC2_OUT1   ------> DCM5_Ictrl  用于控制输出电流大小
  *           *  输出控制信号
- *              PA17                        ------> PowerM_5_EN     电源模块的使能信号        
+ *              PC9                         ------> DCM5_EN     电源模块的使能信号        
  *           *  输入信号
- *              PB7                         ------> PowerM_5_Fault  电源模块的错误指示信号
+ *              PC8                         ------> DCM5_Fault  电源模块的错误指示信号
+ *           *  输入信号
+ *              PB3                         ------> DCM5_Pdet    用于检测是否有输入电源接入
  */
 #ifdef LKHMD500MainB
 //ADC引脚
-#define ADC5_IN1_Pin                          GPIO_PIN_8  
-#define PowerM_5_Volt                         ADC5_IN1_Pin
-#define PowerM_5_Volt_Port                    GPIOA
-#define PowerM_5_Volt_CLK_ENABLE()            __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_5_Volt_CLK_DISABLE()           __HAL_RCC_GPIOA_CLK_DISABLE()
-#define ADC5_IN2_Pin                          GPIO_PIN_9
-#define PowerM_5_Curr                         ADC5_IN2_Pin
-#define PowerM_5_Curr_Port                    GPIOA
-#define PowerM_5_Curr_CLK_ENABLE()            __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_5_Curr_CLK_DISABLE()           __HAL_RCC_GPIOA_CLK_DISABLE()
+#define ADC5_IN2_Pin                      GPIO_PIN_9  
+#define DCM5_Volt_Pin                     ADC5_IN2_Pin
+#define DCM5_Volt_Port                    GPIOA
+#define DCM5_Volt_Pin_CLK_ENABLE()            __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM5_Volt_Pin_CLK_DISABLE()           __HAL_RCC_GPIOA_CLK_DISABLE()
+
+#define ADC5_IN1_Pin                      GPIO_PIN_8
+#define DCM5_Curr_Pin                     ADC5_IN1_Pin
+#define DCM5_Curr_Port                    GPIOA
+#define DCM5_Curr_Pin_CLK_ENABLE()        __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM5_Curr_Pin_CLK_DISABLE()       __HAL_RCC_GPIOA_CLK_DISABLE()
 
 //DAC引脚                          
-#define DAC4_OUT1_Pin                         GPIO_PIN_12
-#define PowerM_5_Ictrl                        DAC4_OUT1_Pin
-#define PowerM_5_Ictrl_Port                   GPIOB
-#define PowerM_5_Ictrl_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
-#define PowerM_5_Ictrl_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
-
-//PWM输出引脚
-#define TIM4_CH1_Pin                          GPIO_PIN_11
-#define PowerM_5_PWM                          TIM4_CH1_Pin
-#define PowerM_5_PWM_Port                     GPIOA
-#define PowerM_5_PWM_CLK_ENABLE()             __HAL_RCC_GPIOA_CLK_ENABLE()
-#define PowerM_5_PWM_CLK_DISABLE()            __HAL_RCC_GPIOA_CLK_DISABLE()
+#define DAC2_OUT1_Pin                     GPIO_PIN_6
+#define DCM5_Ictrl_Pin                    DAC2_OUT1_Pin
+#define DCM5_Ictrl_Port                   GPIOA
+#define DCM5_Ictrl_Pin_CLK_ENABLE()       __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM5_Ictrl_Pin_CLK_DISABLE()      __HAL_RCC_GPIOA_CLK_DISABLE()
 
 //输出控制信号
-#define PowerM_5_EN                           GPIO_PIN_11
-#define PowerM_5_EN_Port                      GPIOC
-#define PowerM_5_EN_CLK_ENABLE()              __HAL_RCC_GPIOC_CLK_ENABLE()
-#define PowerM_5_EN_CLK_DISABLE()             __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DCM5_EN_Pin                       GPIO_PIN_9
+#define DCM5_EN_Port                      GPIOC
+#define DCM5_EN_Pin_CLK_ENABLE()          __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM5_EN_Pin_CLK_DISABLE()         __HAL_RCC_GPIOC_CLK_DISABLE()
 
 //输入信号
-#define PowerM_5_Fault                        GPIO_PIN_7
-#define PowerM_5_Fault_Port                   GPIOB
-#define PowerM_5_Fault_CLK_ENABLE()           __HAL_RCC_GPIOB_CLK_ENABLE()
-#define PowerM_5_Fault_CLK_DISABLE()          __HAL_RCC_GPIOB_CLK_DISABLE()
-#define PowerM_5_Fault_EXTI_IRQn              EXTI7_IRQn
+#ifndef DEVBoardG4
+#define DCM5_Fault_Pin                    GPIO_PIN_8
+#define DCM5_Fault_Port                   GPIOC
+#define DCM5_Fault_Pin_CLK_ENABLE()       __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM5_Fault_Pin_CLK_DISABLE()      __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DCM5_Fault_Pin_EXTI_IRQn          EXTI9_5_IRQn
+#endif
+
+//输入信号
+#define DCM5_Pdet_Pin                     GPIO_PIN_3
+#define DCM5_Pdet_Port                    GPIOB
+#define DCM5_Pdet_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM5_Pdet_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
+#define DCM5_Pdet_Pin_EXTI_IRQn           EXTI3_IRQn
 #endif
 
 /*********************************************************************************
  * @brief 8、 按键和led引脚定义
  *          实际板子WorkLed
- *              PD2     ------> WorkLed
+ *              PC7     ------> WorkLed
  * 
  *          开发板中的引脚定义
  *              PC8     ------> WorkLed
@@ -431,10 +447,14 @@
 
 #define WorkLed_Pin                     GPIO_PIN_8
 #define WorkLed_GPIO_Port               GPIOC
+#define WorkLed_Pin_CLK_ENABLE()        __HAL_RCC_GPIOC_CLK_ENABLE()
+#define WorkLed_Pin_CLK_DISABLE()       __HAL_RCC_GPIOC_CLK_DISABLE()
 #else                             //实际使用的板子
 /* 工作指示灯 */
-#define WorkLed_Pin                     GPIO_PIN_2
-#define WorkLed_GPIO_Port               GPIOD
+#define WorkLed_Pin                     GPIO_PIN_7
+#define WorkLed_GPIO_Port               GPIOC
+#define WorkLed_Pin_CLK_ENABLE()        __HAL_RCC_GPIOC_CLK_ENABLE()
+#define WorkLed_Pin_CLK_DISABLE()       __HAL_RCC_GPIOC_CLK_DISABLE()
 
 #endif
 

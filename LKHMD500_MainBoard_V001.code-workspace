@@ -7,19 +7,10 @@
             "path": "../../../HM4200/code/LKHM840_BaseBoard_cantest_V002"
         },
         {
-            "path": "../../../../../../Arduino/libraries/MAX6675_library"
-        },
-        {
-            "path": "../../../../../../../Library/Arduino15/packages/rp2040/hardware/rp2040/3.3.0/libraries/SPI"
-        },
-        {
-            "path": "../../../../../../Arduino/libraries/Adafruit_BusIO"
-        },
-        {
-            "path": "../../../../../../Arduino/libraries/Adafruit_MAX31855_library"
-        },
-        {
             "path": "../../../LKHM200/code/LKHM_200_EtherCAT_MAX31855"
+        },
+        {
+            "path": "../eventos-master"
         }
     ],
     "settings": {
@@ -46,7 +37,17 @@
             "filesystem": "cpp",
             "initializer_list": "cpp",
             "unordered_map": "cpp",
-            "istream": "cpp"
+            "istream": "cpp",
+            "eventos_def.h": "c",
+            "chrono": "c",
+            "complex": "c",
+            "cstdlib": "c",
+            "numeric": "c",
+            "ratio": "c",
+            "cinttypes": "c",
+            "main.h": "c",
+            "dcmctrl.h": "c",
+            "ethercatpdo.h": "c"
         }
     }
 }

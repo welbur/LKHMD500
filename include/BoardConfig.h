@@ -7,13 +7,30 @@
 
 #include "stm32g4xx_hal.h"
 
-//#define DEVBoardYD            //DEVBoard
-#define DEVBoardG4
+
+#define DIVIDE_AND_ROUND(a, b) ((a) / (b) < 1 ? 1 : (a) / (b))
+
+//#define DEVBoardG4
 #define UartPrintf            //LOG_DEBUG	;UartPrintf
 #define LKHMD500MainB        
 //#define RTOS_enable
 
 #define DCModuleNum                 5
+
+
+
+
+union VoidData
+{
+    void *p;
+    uint8_t i8;
+    uint16_t i16;
+    uint32_t i32;
+    float f;
+    double d;
+    char c;
+};
+
 
 /*设备状态码*/
 typedef enum 
@@ -43,26 +60,46 @@ typedef enum
 
 extern uint16_t DeviceStateInfo;    // = DeviceState_Default; 
 
+#if 0
+typedef struct
+{
+    uint16_t addr_offset;
+    void     *data;
+}DATAParaHandle;
+#endif
+
+// 定义数据类型枚举
+typedef enum {
+    TYPE_BOOL,
+    TYPE_INT,
+    TYPE_UINT8,
+    TYPE_UINT16,
+    TYPE_UINT32,
+    TYPE_FLOAT,
+    TYPE_DOUBLE,
+    TYPE_CHAR,
+    // 其他可能的数据类型...
+} DataTypeHandle;
+
 typedef struct
 {
 	/*直流模块的输入属性：往PLC发送的属性*/
-    float 		INData_DCModule_Volt[DCModuleNum];
+//    float 		INData_DCModule_Volt[DCModuleNum];
 	float 		INData_DCModule_Curr[DCModuleNum];
-	/*设备的状态值*/
-	uint8_t		INData_DevState[1];
+	/*每个通道的状态值*/
+	uint16_t		INData_DCMState[DCModuleNum];
 
-}INDATAParaHandle;
+}INDATAValueHandle;
+INDATAValueHandle INDataValue;
 
 typedef struct
 {
-	/*设备的使能信号*/
-	uint8_t		OUTData_DevEnable[1];
+	/*每个通道的使能信号*/
+	uint8_t 	OUTData_DCModule_Enable[DCModuleNum];
 	/*直流模块的输出属性：从PLC获取到的属性, 包含控制指令和配置参数*/
-	float 		OUTData_DCModule_SetCurr[DCModuleNum];
-	uint16_t	OUTData_DCModule_SetFreq[DCModuleNum];
-    uint8_t 	OUTData_DCModule_SetPWM[DCModuleNum];
-}OUTDATAParaHandle;
-
+	float		OUTData_DCModule_SetCurr[DCModuleNum];
+}OUTDATAValueHandle;
+OUTDATAValueHandle OUTDataValue;
 
 enum {
     IN_DCModule_Volt,

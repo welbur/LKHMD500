@@ -687,13 +687,14 @@ void eos_event_pub_time(eos_topic_t topic, eos_u32_t time_ms, eos_bool_t oneshoo
 {
     EOS_ASSERT(time_ms != 0);
     EOS_ASSERT(time_ms <= timer_threshold[EosTimerUnit_Minute]);
+    LOG("timer event  : %d\r\n", eos.timer_count);
     EOS_ASSERT(eos.timer_count < EOS_MAX_TIME_EVENT);
-
+    
     // 检查重复，不允许重复发送。
     for (eos_u32_t i = 0; i < eos.timer_count; i ++) {
         EOS_ASSERT(topic != eos.etimer[i].topic);
     }
-
+    
     eos_u32_t system_ms = eos.time;
     eos_u8_t unit = EosTimerUnit_Ms;
     eos_u16_t period = 0;

@@ -55,16 +55,28 @@
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern DMA_HandleTypeDef hdma_dac1_ch1;
-extern DMA_HandleTypeDef hdma_dac1_ch2;
-extern DMA_HandleTypeDef hdma_dac2_ch1;
-extern DMA_HandleTypeDef hdma_dac3_ch1;
-extern DMA_HandleTypeDef hdma_dac4_ch1;
-extern DMA_HandleTypeDef hdma_usart1_rx;
-extern DMA_HandleTypeDef hdma_usart1_tx;
+// extern DMA_HandleTypeDef hdma_dac1_ch1;
+// extern DMA_HandleTypeDef hdma_dac1_ch2;
+// extern DMA_HandleTypeDef hdma_dac2_ch1;
+// extern DMA_HandleTypeDef hdma_dac3_ch1;
+// extern DMA_HandleTypeDef hdma_dac4_ch1;
+// extern DMA_HandleTypeDef hdma_usart1_rx;
+// extern DMA_HandleTypeDef hdma_usart1_tx;
+extern ADC_HandleTypeDef hadc1;
+extern ADC_HandleTypeDef hadc2;
+extern ADC_HandleTypeDef hadc3;
+extern ADC_HandleTypeDef hadc4;
+extern ADC_HandleTypeDef hadc5;
+extern DMA_HandleTypeDef hdma_adc1;
+extern DMA_HandleTypeDef hdma_adc2;
+extern DMA_HandleTypeDef hdma_adc3;
+extern DMA_HandleTypeDef hdma_adc4;
+extern DMA_HandleTypeDef hdma_adc5;
+
 extern UART_HandleTypeDef huart1;
 extern TIM_HandleTypeDef htim2;
 extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim7;
 
 /* USER CODE BEGIN EV */
 
@@ -216,7 +228,7 @@ void EXTI3_IRQHandler(void)
 	/* USER CODE BEGIN EXTI3_IRQn 0 */
 
 	/* USER CODE END EXTI3_IRQn 0 */
-	HAL_GPIO_EXTI_IRQHandler(PowerM_1_Fault);
+	HAL_GPIO_EXTI_IRQHandler(DCM5_Pdet_Pin);	//GPIO3
 	/* USER CODE BEGIN EXTI3_IRQn 1 */
 
 	/* USER CODE END EXTI3_IRQn 1 */
@@ -230,12 +242,115 @@ void EXTI4_IRQHandler(void)
 	/* USER CODE BEGIN EXTI4_IRQn 0 */
 
 	/* USER CODE END EXTI4_IRQn 0 */
-	HAL_GPIO_EXTI_IRQHandler(PowerM_2_Fault);
+	HAL_GPIO_EXTI_IRQHandler(DCM4_Pdet_Pin);	//GPIO4
 	/* USER CODE BEGIN EXTI4_IRQn 1 */
 
 	/* USER CODE END EXTI4_IRQn 1 */
 }
 
+/**
+ * @brief This function handles EXTI line[9:5] interrupts.
+ */
+void EXTI9_5_IRQHandler(void)
+{
+	/* USER CODE BEGIN EXTI9_5_IRQn 0 */
+
+	/* USER CODE END EXTI9_5_IRQn 0 */
+	HAL_GPIO_EXTI_IRQHandler(DCM3_Pdet_Pin);	//GPIO5
+	HAL_GPIO_EXTI_IRQHandler(DCM4_Fault_Pin);	//GPIO6
+	HAL_GPIO_EXTI_IRQHandler(DCM2_Pdet_Pin);	//GPIO7
+#ifndef DEVBoardG4
+	HAL_GPIO_EXTI_IRQHandler(DCM5_Fault_Pin);	//GPIO8
+#endif
+	HAL_GPIO_EXTI_IRQHandler(DCM1_Pdet_Pin);	//GPIO9
+	/* USER CODE BEGIN EXTI9_5_IRQn 1 */
+
+	/* USER CODE END EXTI9_5_IRQn 1 */
+}
+
+/**
+ * @brief This function handles EXTI line[15:10] interrupts.
+ */
+void EXTI15_10_IRQHandler(void)
+{
+	HAL_GPIO_EXTI_IRQHandler(DCM2_Fault_Pin);	//GPIO10
+	HAL_GPIO_EXTI_IRQHandler(DCM1_Fault_Pin);	//GPIO11
+	HAL_GPIO_EXTI_IRQHandler(DCM3_Fault_Pin);	//GPIO12
+}
+
+/**
+ * @brief This function handles DMA1 channel1 global interrupt.
+ */
+#ifndef DEVBoardG4
+void DMA1_Channel1_IRQHandler(void)
+{
+	/* USER CODE BEGIN DMA1_Channel1_IRQn 0 */
+
+	/* USER CODE END DMA1_Channel1_IRQn 0 */
+	HAL_DMA_IRQHandler(&hdma_adc1);
+	/* USER CODE BEGIN DMA1_Channel1_IRQn 1 */
+
+	/* USER CODE END DMA1_Channel1_IRQn 1 */
+}
+#endif
+
+/**
+ * @brief This function handles DMA1 channel2 global interrupt.
+ */
+void DMA1_Channel2_IRQHandler(void)
+{
+	/* USER CODE BEGIN DMA1_Channel2_IRQn 0 */
+
+	/* USER CODE END DMA1_Channel2_IRQn 0 */
+	HAL_DMA_IRQHandler(&hdma_adc2);
+	/* USER CODE BEGIN DMA1_Channel2_IRQn 1 */
+
+	/* USER CODE END DMA1_Channel2_IRQn 1 */
+}
+
+/**
+ * @brief This function handles DMA1 channel3 global interrupt.
+ */
+void DMA1_Channel3_IRQHandler(void)
+{
+	/* USER CODE BEGIN DMA1_Channel3_IRQn 0 */
+
+	/* USER CODE END DMA1_Channel3_IRQn 0 */
+	HAL_DMA_IRQHandler(&hdma_adc3);
+	/* USER CODE BEGIN DMA1_Channel3_IRQn 1 */
+
+	/* USER CODE END DMA1_Channel3_IRQn 1 */
+}
+
+/**
+ * @brief This function handles DMA1 channel4 global interrupt.
+ */
+void DMA1_Channel4_IRQHandler(void)
+{
+	/* USER CODE BEGIN DMA1_Channel4_IRQn 0 */
+
+	/* USER CODE END DMA1_Channel4_IRQn 0 */
+	HAL_DMA_IRQHandler(&hdma_adc4);
+	/* USER CODE BEGIN DMA1_Channel4_IRQn 1 */
+
+	/* USER CODE END DMA1_Channel4_IRQn 1 */
+}
+
+/**
+ * @brief This function handles DMA1 channel5 global interrupt.
+ */
+void DMA1_Channel5_IRQHandler(void)
+{
+	/* USER CODE BEGIN DMA1_Channel5_IRQn 0 */
+
+	/* USER CODE END DMA1_Channel5_IRQn 0 */
+	HAL_DMA_IRQHandler(&hdma_adc5);
+	/* USER CODE BEGIN DMA1_Channel5_IRQn 1 */
+
+	/* USER CODE END DMA1_Channel5_IRQn 1 */
+}
+
+#if 0
 /**
  * @brief This function handles DMA1 channel1 global interrupt.
  */
@@ -305,6 +420,7 @@ void DMA1_Channel5_IRQHandler(void)
 
 	/* USER CODE END DMA1_Channel5_IRQn 1 */
 }
+#endif
 
 #if 0
 /**
@@ -337,33 +453,17 @@ void DMA1_Channel7_IRQHandler(void)
 #endif
 
 /**
-  * @brief This function handles USART1 global interrupt / USART1 wake-up interrupt through EXTI line 25.
-  */
+ * @brief This function handles USART1 global interrupt / USART1 wake-up interrupt through EXTI line 25.
+ */
 void USART1_IRQHandler(void)
 {
-  /* USER CODE BEGIN USART1_IRQn 0 */
+	/* USER CODE BEGIN USART1_IRQn 0 */
 
-  /* USER CODE END USART1_IRQn 0 */
-  HAL_UART_IRQHandler(&huart1);
-  /* USER CODE BEGIN USART1_IRQn 1 */
+	/* USER CODE END USART1_IRQn 0 */
+	HAL_UART_IRQHandler(&huart1);
+	/* USER CODE BEGIN USART1_IRQn 1 */
 
-  /* USER CODE END USART1_IRQn 1 */
-}
-
-/**
- * @brief This function handles EXTI line[9:5] interrupts.
- */
-void EXTI9_5_IRQHandler(void)
-{
-	/* USER CODE BEGIN EXTI9_5_IRQn 0 */
-
-	/* USER CODE END EXTI9_5_IRQn 0 */
-	HAL_GPIO_EXTI_IRQHandler(PowerM_3_Fault);
-	HAL_GPIO_EXTI_IRQHandler(PowerM_4_Fault);
-	HAL_GPIO_EXTI_IRQHandler(PowerM_5_Fault);
-	/* USER CODE BEGIN EXTI9_5_IRQn 1 */
-
-	/* USER CODE END EXTI9_5_IRQn 1 */
+	/* USER CODE END USART1_IRQn 1 */
 }
 
 /**
@@ -394,6 +494,22 @@ void TIM6_DAC_IRQHandler(void)
 	/* USER CODE BEGIN TIM6_DAC_IRQn 1 */
 
 	/* USER CODE END TIM6_DAC_IRQn 1 */
+}
+
+/**
+ * @brief This function handles TIM7 global interrupt, DAC2 and DAC4 channel underrun error interrupts.
+ */
+void TIM7_DAC_IRQHandler(void)
+{
+	/* USER CODE BEGIN TIM7_DAC_IRQn 0 */
+
+	/* USER CODE END TIM7_DAC_IRQn 0 */
+	HAL_TIM_IRQHandler(&htim7);
+//	HAL_DAC_IRQHandler(&hdac2);
+//	HAL_DAC_IRQHandler(&hdac4);
+	/* USER CODE BEGIN TIM7_DAC_IRQn 1 */
+
+	/* USER CODE END TIM7_DAC_IRQn 1 */
 }
 /* USER CODE BEGIN 1 */
 

@@ -44,15 +44,16 @@ extern TIM_HandleTypeDef htim4;
 //extern TIM_HandleTypeDef htim12;
 
 extern TIM_HandleTypeDef htim6;
+extern TIM_HandleTypeDef htim7;
 
-extern __IO uint32_t TIM6tick_2us;		      //用于产生1us计数
-//extern __IO uint32_t TIM2tick_us_cache;		//用于产生1ms计数
+extern __IO uint32_t TIM6tick_10us;		      //用于产生10us计数
 
 //void HAL_TIM_MspPostInit(TIM_HandleTypeDef* htim);
 
 void MX_TIM3_Init(void);
 void MX_TIM4_Init(void);
 void MX_TIM6_Init(void);
+void MX_TIM7_Init(void);
 
 uint32_t HAL_getTick_us(void);
 
