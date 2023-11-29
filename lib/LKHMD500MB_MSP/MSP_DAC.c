@@ -254,10 +254,10 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef* hdac)
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(DCM1_Ictrl_Port, &GPIO_InitStruct);
-    GPIO_InitStruct.Pin = DCM3_Ictrl_Pin;
+    GPIO_InitStruct.Pin = DCM2_Ictrl_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(DCM3_Ictrl_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(DCM2_Ictrl_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN DAC1_MspInit 1 */
 
@@ -275,10 +275,10 @@ void HAL_DAC_MspInit(DAC_HandleTypeDef* hdac)
     /**DAC2 GPIO Configuration
     PA6     ------> DAC2_OUT1
     */
-    GPIO_InitStruct.Pin = DCM5_Ictrl_Pin;
+    GPIO_InitStruct.Pin = DCM3_Ictrl_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(DCM5_Ictrl_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(DCM3_Ictrl_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN DAC2_MspInit 1 */
 
@@ -331,7 +331,7 @@ void HAL_DAC_MspDeInit(DAC_HandleTypeDef* hdac)
     PA5     ------> DAC1_OUT2
     */
     HAL_GPIO_DeInit(DCM1_Ictrl_Port, DCM1_Ictrl_Pin);
-    HAL_GPIO_DeInit(DCM3_Ictrl_Port, DCM3_Ictrl_Pin);
+    HAL_GPIO_DeInit(DCM2_Ictrl_Port, DCM2_Ictrl_Pin);
 
   /* USER CODE BEGIN DAC1_MspDeInit 1 */
 
@@ -348,7 +348,7 @@ void HAL_DAC_MspDeInit(DAC_HandleTypeDef* hdac)
     /**DAC2 GPIO Configuration
     PA6     ------> DAC2_OUT1
     */
-    HAL_GPIO_DeInit(DCM5_Ictrl_Port, DCM5_Ictrl_Pin);
+    HAL_GPIO_DeInit(DCM3_Ictrl_Port, DCM3_Ictrl_Pin);
   /* USER CODE BEGIN DAC2_MspDeInit 1 */
 
   /* USER CODE END DAC2_MspDeInit 1 */
@@ -464,10 +464,10 @@ void HAL_OPAMP_MspInit(OPAMP_HandleTypeDef* hopamp)
     /**OPAMP1 GPIO Configuration
     PA2     ------> OPAMP1_VOUT
     */
-    GPIO_InitStruct.Pin = DCM2_Ictrl_Pin;
+    GPIO_InitStruct.Pin = DCM4_Ictrl_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(DCM2_Ictrl_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(DCM4_Ictrl_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN OPAMP1_MspInit 1 */
 
@@ -483,10 +483,10 @@ void HAL_OPAMP_MspInit(OPAMP_HandleTypeDef* hopamp)
     /**OPAMP4 GPIO Configuration
     PB12     ------> OPAMP4_VOUT
     */
-    GPIO_InitStruct.Pin = DCM4_Ictrl_Pin;
+    GPIO_InitStruct.Pin = DCM5_Ictrl_Pin;
     GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    HAL_GPIO_Init(DCM4_Ictrl_Port, &GPIO_InitStruct);
+    HAL_GPIO_Init(DCM5_Ictrl_Port, &GPIO_InitStruct);
 
   /* USER CODE BEGIN OPAMP4_MspInit 1 */
 
@@ -512,7 +512,7 @@ void HAL_OPAMP_MspDeInit(OPAMP_HandleTypeDef* hopamp)
     /**OPAMP1 GPIO Configuration
     PA2     ------> OPAMP1_VOUT
     */
-    HAL_GPIO_DeInit(DCM2_Ictrl_Port, DCM2_Ictrl_Pin);
+    HAL_GPIO_DeInit(DCM4_Ictrl_Port, DCM4_Ictrl_Pin);
 
   /* USER CODE BEGIN OPAMP1_MspDeInit 1 */
 
@@ -527,7 +527,7 @@ void HAL_OPAMP_MspDeInit(OPAMP_HandleTypeDef* hopamp)
     /**OPAMP4 GPIO Configuration
     PB12     ------> OPAMP4_VOUT
     */
-    HAL_GPIO_DeInit(DCM4_Ictrl_Port, DCM4_Ictrl_Pin);
+    HAL_GPIO_DeInit(DCM5_Ictrl_Port, DCM5_Ictrl_Pin);
 
   /* USER CODE BEGIN OPAMP4_MspDeInit 1 */
 

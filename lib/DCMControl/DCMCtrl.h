@@ -25,27 +25,82 @@
 #define DCM_ADC_Resolution      12
 #define DCM_ADC_MAX             ((1 << DCM_ADC_Resolution) - 1)
 
-#define DCM_SetCurr_Gain			    1250	//设置输出电流是的比例系数：1.6V对应的是20A    1.6 * 12.5 = 20A
-#define DCM_OUTCurr_Gain			    755		//读取输出电流的比例系数：  2.65V对应的是20A   2.65 * 7.55 = 20A
+//#define DCM_SetCurr_Gain			    1250	//设置输出电流是的比例系数：1.6V对应的是20A    1.6 * 12.5 = 20A
+#define DCM_OUTCurr_Gain_O			    755		//旧板， 读取输出电流的比例系数：  2.65V对应的是20A   2.65 * 7.55 = 20A		
+//#define DCM_OUTCurr_Gain_N			    663		//新板2023-11-06， 读取输出电流的比例系数：  2.65V对应的是20A   3 * 6.63 = 20A	
 #define DCM_OUTVolt_Gain			    833		//读取输出电压的比例系数：  3.0V对应的是25V    3.0 * 8.33 = 25V  
 #define DCM_Gain_Multi        			100
 
+
 #define DCM_ANALOGIN_Size       2  
 
-#define DCM1_OUTVolt			0
-#define DCM1_OUTCurr			1
-#define DCM2_OUTVolt			0
-#define DCM2_OUTCurr			1
-#define DCM3_OUTCurr			0
-#define DCM3_OUTVolt			1
-#define DCM4_OUTVolt			0
-#define DCM4_OUTCurr			1
-#define DCM5_OUTCurr			0
-#define DCM5_OUTVolt			1
+#define DCM1_OUTCurr_Index			0
+#define DCM1_OUTVolt_Index			1
+#define DCM2_OUTVolt_Index			0
+#define DCM2_OUTCurr_Index			1
+#define DCM3_OUTCurr_Index			0
+#define DCM3_OUTVolt_Index			1
+#define DCM4_OUTVolt_Index			0
+#define DCM4_OUTCurr_Index			1
+#define DCM5_OUTCurr_Index			0
+#define DCM5_OUTVolt_Index			1
 
 extern float DCM_OUTCurr_Max;      // 输出最大电流
 extern float DCM_OUTCurr_Min;      // 输出最小电流
 extern float DCM_OUTCurr_Limit;   // 判断有无电流的最小值
+
+
+/* 输出电流控制信号ctrl采用分段比例放大的方式 */
+typedef struct
+{
+	uint16_t SetCurr_Gain_1A;			//0.8A~1.5A
+	uint16_t SetCurr_Gain_2A;			//1.5~2.5A
+	uint16_t SetCurr_Gain_3A;			//2.5A~3.5A
+	uint16_t SetCurr_Gain_4A;			//3.5A~4.5A
+	uint16_t SetCurr_Gain_5A;			//4.5A~5.5A
+	uint16_t SetCurr_Gain_6A;			//5.5A~6.5A
+	uint16_t SetCurr_Gain_7A;			//6.5A~7.5A
+	uint16_t SetCurr_Gain_8A;			//7.5A~8.5A
+	uint16_t SetCurr_Gain_9A;			//8.5A~9.5A
+	uint16_t SetCurr_Gain_10A;			//9.5A~10.5A
+	uint16_t SetCurr_Gain_11A;			//10.5A~11.5A
+	uint16_t SetCurr_Gain_12A;			//11.5A~12.5A
+	uint16_t SetCurr_Gain_13A;			//12.5A~13.5A
+	uint16_t SetCurr_Gain_14A;			//13.5A~14.5A
+	uint16_t SetCurr_Gain_15A;			//14.5A~15.5A
+	uint16_t SetCurr_Gain_16A;			//15.5A~16.5A
+	uint16_t SetCurr_Gain_17A;			//16.5A~17.5A
+	uint16_t SetCurr_Gain_18A;			//17.5A~18.5A
+	uint16_t SetCurr_Gain_19A;			//18.5A~19.5A
+	uint16_t SetCurr_Gain_20A;			//19.5A~20A
+}DCM_SetCurr_Gain_Handle;
+
+/* 输出电流反馈信号curr采用分段比例放大的方式 */
+typedef struct 
+{
+	uint16_t OUTCurr_Gain_1A;			//0.8A~1.5A
+	uint16_t OUTCurr_Gain_2A;			//1.5~2.5A
+	uint16_t OUTCurr_Gain_3A;			//2.5A~3.5A
+	uint16_t OUTCurr_Gain_4A;			//3.5A~4.5A
+	uint16_t OUTCurr_Gain_5A;			//4.5A~5.5A
+	uint16_t OUTCurr_Gain_6A;			//5.5A~6.5A
+	uint16_t OUTCurr_Gain_7A;			//6.5A~7.5A
+	uint16_t OUTCurr_Gain_8A;			//7.5A~8.5A
+	uint16_t OUTCurr_Gain_9A;			//8.5A~9.5A
+	uint16_t OUTCurr_Gain_10A;			//9.5A~10.5A
+	uint16_t OUTCurr_Gain_11A;			//10.5A~11.5A
+	uint16_t OUTCurr_Gain_12A;			//11.5A~12.5A
+	uint16_t OUTCurr_Gain_13A;			//12.5A~13.5A
+	uint16_t OUTCurr_Gain_14A;			//13.5A~14.5A
+	uint16_t OUTCurr_Gain_15A;			//14.5A~15.5A
+	uint16_t OUTCurr_Gain_16A;			//15.5A~16.5A
+	uint16_t OUTCurr_Gain_17A;			//16.5A~17.5A
+	uint16_t OUTCurr_Gain_18A;			//17.5A~18.5A
+	uint16_t OUTCurr_Gain_19A;			//18.5A~19.5A
+	uint16_t OUTCurr_Gain_20A;			//19.5A~20A
+}DCM_OUTCurr_Gain_Handle;
+
+
 
 typedef enum
 {

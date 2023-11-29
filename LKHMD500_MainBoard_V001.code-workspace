@@ -8,9 +8,6 @@
         },
         {
             "path": "../../../LKHM200/code/LKHM_200_EtherCAT_MAX31855"
-        },
-        {
-            "path": "../eventos-master"
         }
     ],
     "settings": {

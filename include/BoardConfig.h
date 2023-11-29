@@ -11,7 +11,7 @@
 #define DIVIDE_AND_ROUND(a, b) ((a) / (b) < 1 ? 1 : (a) / (b))
 
 //#define DEVBoardG4
-#define UartPrintf            //LOG_DEBUG	;UartPrintf
+#define USBPrintf      //USBPrintf        //UartPrintf            //LOG_DEBUG	;UartPrintf     //USBPrintf
 #define LKHMD500MainB        
 //#define RTOS_enable
 

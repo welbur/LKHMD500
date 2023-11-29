@@ -78,7 +78,7 @@ void MX_USART3_UART_Init(void)
 
 	/* USER CODE END USART3_Init 1 */
 	huart3.Instance = USART3;
-	huart3.Init.BaudRate = 460800;		//115200;
+	huart3.Init.BaudRate = 115200;		//460800;		//115200;
 	huart3.Init.WordLength = UART_WORDLENGTH_8B;
 	huart3.Init.StopBits = UART_STOPBITS_1;
 	huart3.Init.Parity = UART_PARITY_NONE;
@@ -208,10 +208,10 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 		/* Peripheral clock enable */
 		__HAL_RCC_USART1_CLK_ENABLE();
 
-		__HAL_RCC_GPIOC_CLK_ENABLE();
+		USART1_GPIO_CLK_ENABLE();
 		/**USART3 GPIO Configuration
-		PC4     ------> USART1_TX
-		PC5     ------> USART1_RX
+		PB6     ------> USART1_TX
+		PB7     ------> USART1_RX
 		*/
 		GPIO_InitStruct.Pin = USART1_TX_Pin | USART1_RX_Pin;
 		GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
@@ -242,7 +242,7 @@ void HAL_UART_MspInit(UART_HandleTypeDef *huart)
 		/* Peripheral clock enable */
 		__HAL_RCC_USART3_CLK_ENABLE();
 
-		__HAL_RCC_GPIOB_CLK_ENABLE();
+		USART3_GPIO_CLK_ENABLE();
 		/**USART3 GPIO Configuration
 		PB10     ------> USART3_TX
 		PB11     ------> USART3_RX
@@ -303,8 +303,8 @@ void HAL_UART_MspDeInit(UART_HandleTypeDef *huart)
 		__HAL_RCC_USART1_CLK_DISABLE();
 
 		/**USART1 GPIO Configuration
-		PC4     ------> USART1_TX
-		PC5     ------> USART1_RX
+		PB6     ------> USART1_TX
+		PB7     ------> USART1_RX
 		*/
 		HAL_GPIO_DeInit(USART1_GPIO_PORT, USART1_TX_Pin | USART1_RX_Pin);
 

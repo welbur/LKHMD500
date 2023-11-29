@@ -67,6 +67,7 @@ enum {
     Event_DCM_CtrlOUTCurr,
 
     Event_Button,
+    Event_UserTest,
     
     Event_ActEnd,
     

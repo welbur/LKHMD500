@@ -8,18 +8,21 @@
 //#include "FrameFormat.h"
 #include "EtherCatPDO.h"
 #include "DCMCtrl.h"
-//#include "main.h"
+#include "math.h"
 
 //#define Run_AllDCM_mode     //执行指令时，每次都是所有通道执行一遍
 
 OUTDATAValueHandle OUTDataValue_Cache;
 uint16_t INDataValue_DCMState_Cache[DCModuleNum];
+float INDataValue_DCModule_Curr_Cache[DCModuleNum];
+
+uint16_t DCMOUTCurr_Cnt = 0;
 
 float _DCM_OUT_Volt[DCModuleNum];           //每个恒流模块的输出电压
 uint8_t _DCM_INVolt_EN[DCModuleNum];        //检测是否有输入电压
 uint8_t _DCM_Fault[DCModuleNum];            //每个恒流模块的错误状态
 
-const char *HMD500_FirmWare = "V0.1.0\0";
+const char *HMD500_FirmWare = "V0.1.0";
 const char* Enable_DCM_Log[]                = {"Disable!", "Enable!"};   
 //char* DCModule_State_Log[]            = {"Working Fine!", "OUTPUT Over Current!", "No INPUT Voltage!", };
 
@@ -28,7 +31,8 @@ typedef struct eos_sm_hmd500_tag {
     DCModule_State_t DCMstatus;
 //    uint8_t DCM_Enable[DCModuleNum];
 //    float DCM_SetCurr[DCModuleNum];
-    uint8_t repeatCnt;
+//    uint8_t repeatCnt;
+//    uint16_t DCMOUTCurr_Cnt;
     LAN9255State_t ECATstatus;
     uint8_t TransData_Status;
     uint8_t testidx;
@@ -84,14 +88,15 @@ static eos_ret_t workled_state_init(eos_sm_led_t * const me, eos_event_t const *
     EOS_EVENT_SUB(Event_WorkLed_Blink);
 //    EOS_EVENT_SUB(Event_Button);
     EOS_EVENT_SUB(Event_PrintLOG);
+    EOS_EVENT_SUB(Event_UserTest);
 #endif
-    eos_event_pub_period(Event_WorkLed_Blink, PeriodTime_1000ms);
+    eos_event_pub_period(Event_WorkLed_Blink, 50);  //PeriodTime_1000ms);
 //    eos_event_pub_period(Event_PrintLOG, PeriodTime_2000ms);
     LOG("workled state init \r\n");
     return EOS_TRAN(workled_state_on);
 }
 
-
+float tt = 0;
 static eos_ret_t workled_state_on(eos_sm_led_t * const me, eos_event_t const * const e)
 {
 //    LOG("eos state on \r\n");
@@ -99,6 +104,7 @@ static eos_ret_t workled_state_on(eos_sm_led_t * const me, eos_event_t const * c
         case Event_Enter:
             //WorkLed(me->status);
             LOG("eos workled state -----Event_Enter \r\n");
+            dcm_set_outcurrent(1, 2);   //test
             return EOS_Ret_Handled;
         
         case Event_Exit:
@@ -120,22 +126,41 @@ static eos_ret_t workled_state_on(eos_sm_led_t * const me, eos_event_t const * c
             {   
                 LOG("#####   DCM[%d]   #####\r\n", i+1);
                 LOG("               <<<   Status : %d ------ %s\r\n", INDataValue_DCMState_Cache[i], DCModule_State_Log(INDataValue_DCMState_Cache[i]));
-                LOG("               <<<   Actual OUTPUT Current : %f\r\n", INDataValue.INData_DCModule_Curr[i]);
+                LOG("               <<<   Actual OUTPUT Current : %f\r\n", INDataValue.INData_DCModule_Curr[i]);     //INDataValue_DCModule_Curr_Cache[i]);
                 LOG("               ^^^   Actual OUTPUT Voltage : %f\r\n", dcm_get_outvoltage(i));
                 LOG("               ^^^   Fault Signal : %d\r\n", dcm_get_dcmfault(i));
             }
 
             return EOS_Ret_Handled;         //EOS_TRAN(state_off);
 
+        case Event_UserTest:
+            //LOG("test Volt : %f\r\n", dcm_get_outvoltage(0));
+            dcm_get_outvoltage(0);
+            return EOS_Ret_Handled;
+
         case Event_WorkLed_Blink:
             //LOG("eos state on-----Event_Time_500ms %d\r\n", HAL_GPIO_ReadPin(KEY_GPIO_Port, KEY_Pin));
             WorkLed_TogglePin;
             me->status += 1;
+            #if 0
             if (me->status >= 3) 
             {
                 me->status = 0;
                 eos_event_pub_topic(Event_PrintLOG);
             }
+            #endif
+            
+            eos_event_pub_topic(Event_UserTest);
+            if (me->status >= 30)
+            {
+                me->status = 0;
+                tt += 1;
+                if (tt > 20)
+                    tt = 0;
+                //for (int i = 0; i < DCModuleNum; i++)
+                //dcm_set_outcurrent(1, tt);   //test
+            }
+
             return EOS_Ret_Handled;     //EOS_TRAN(state_off);
 
         case Event_Button:
@@ -223,7 +248,6 @@ static eos_ret_t EtherCatPDO_state_init(eos_sm_ecat_t * const me, eos_event_t co
     EOS_EVENT_SUB(Event_ECAT_StartEtherCat);
 #endif
 
-    //eos_event_pub_period(Event_ECAT_ReadLAN9255State_SendCMD, PeriodTime_2000ms);
     eos_event_pub_period(Event_ECAT_SendCMD_TIMEOUT, PeriodTime_2000ms);
     eos_event_pub_topic(Event_ECAT_Start_InitLAN9255);
     LOG("Event_EtherCatPDO state init \r\n");
@@ -257,7 +281,7 @@ static eos_ret_t EtherCatPDO_state_InitLAN9255(eos_sm_ecat_t * const me, eos_eve
 
         /*********************      刚上电的时候，先读取LAN9255状态      *********************/
         case Event_ECAT_ReadLAN9255State_SendCMD:
-            LOG("Event_ECAT_ReadLAN9255State_SendCMD \r\n");
+            //LOG("Event_ECAT_ReadLAN9255State_SendCMD \r\n");
             me->status = cmd_rsp_wait;
             me->previewEvent = Event_ECAT_ReadLAN9255State_SendCMD;
             ReadLAN9255State_SendCMD();
@@ -361,7 +385,7 @@ static eos_ret_t EtherCatPDO_state_InitLAN9255(eos_sm_ecat_t * const me, eos_eve
         /*                          多次发送指令都失败的话，就重启9255                                                        */
         /*****************************************************************************************************************/
         case Event_ECAT_SendCMD_TIMEOUT:
-            LOG_info("Event_ECAT_SendCMD_TIMEOUT\r\n");
+            //LOG_info("Event_ECAT_SendCMD_TIMEOUT\r\n");
             if (me->LAN9255_InitDone == 1)
             {
                 LOG("event cat sendcmd timeout\r\n");
@@ -375,7 +399,7 @@ static eos_ret_t EtherCatPDO_state_InitLAN9255(eos_sm_ecat_t * const me, eos_eve
                 {
                     me->timeoout_idx = 0;
                     me->repeatCnt += 1;
-                    LOG("previewevent : %d\r\n", me->previewEvent);
+                    //LOG("previewevent : %d\r\n", me->previewEvent);
                     eos_event_pub_topic(me->previewEvent);
                 }
             }
@@ -473,10 +497,11 @@ static eos_ret_t HMD500_state_Process(eos_sm_hmd500_t * const me, eos_event_t co
         case Event_Enter:
             LOG_info("HMD500_state_Process\r\n");
             me->ECATstatus = LAN9255State_DisconnectedToPLC;
-            me->repeatCnt = 0;
+            //me->DCMOUTCurr_Cnt = 0;
             me->TransData_Status = 0;
             me->testidx = 0;
             memset(INDataValue_DCMState_Cache, 0, sizeof(INDataValue_DCMState_Cache));
+            memset(INDataValue_DCModule_Curr_Cache, 0, sizeof(INDataValue_DCModule_Curr_Cache));
             return EOS_Ret_Handled;
         
         case Event_Exit:
@@ -545,30 +570,37 @@ static eos_ret_t HMD500_state_Process(eos_sm_hmd500_t * const me, eos_event_t co
         case Event_ECAT_ReadDataFromLAN9255_RecvRSP:
             ocdata = (uint8_t *)e->data;   
             //LOG("read data from LAN9255\r\n");
-            if (e->size <= 0)
-                return EOS_Ret_Handled;
-
+            //if (e->size <= 0)
+            //    return EOS_Ret_Handled;
             /* 保存读取到的数据 */
-            memcpy(&OUTDataValue_Cache, &OUTDataValue, sizeof(OUTDataValue));
-            eos_event_pub(Event_DCM_CtrlOUTCurr, ocdata, e->size);
-
-#if 0
-            if (memcmp(&OUTDataValue_Cache, &OUTDataValue, sizeof(OUTDataValue)))
+            if (e->size > 0)
             {
+                //LOG("e->size : %d\r\n", e->size);
+                //DCMOUTCurr_Cnt = 301;                                               //用于及时反馈输出电流值
                 memcpy(&OUTDataValue_Cache, &OUTDataValue, sizeof(OUTDataValue));
                 eos_event_pub(Event_DCM_CtrlOUTCurr, ocdata, e->size);
             }
-#endif
-            
             return EOS_Ret_Handled;
 
         /* 循环读取恒流模块的状态 和 输出电流值 */
         case Event_DCM_ReadDCMState:
             //LOG("Event_DCM_ReadDCMState\r\n");
             /* 读取各个通道的输出电流值 & 输出电压值 & 错误状态Fault & 是否有输入电压*/
+            //DCMOUTCurr_Cnt++;
             for (int i = 0; i < DCModuleNum; i++)
             {
-                INDataValue.INData_DCModule_Curr[i] = dcm_get_outcurrent(i);    //获取输出电流值
+                INDataValue.INData_DCModule_Curr[i] = round(dcm_get_outcurrent(i)*100) / 100;    //获取输出电流值
+                #if 0
+                INDataValue_DCModule_Curr_Cache[i] = round(dcm_get_outcurrent(i) * 100) / 100; 
+                if (DCMOUTCurr_Cnt > 150)
+                {
+                    LOG("DCMOUTCurr_Cnt : %d\r\n", DCMOUTCurr_Cnt);
+                    INDataValue.INData_DCModule_Curr[i] = INDataValue_DCModule_Curr_Cache[i];
+                    if (i >= DCModuleNum - 1)
+                        DCMOUTCurr_Cnt = 0;
+                }
+                #endif
+
                 INDataValue_DCMState_Cache[i] = dcm_get_dcmstate(i);
                 if (INDataValue_DCMState_Cache[i] != DCMState_Fault)
                     INDataValue.INData_DCMState[i]= INDataValue_DCMState_Cache[i];        //dcm_get_dcmstate(i);
@@ -579,7 +611,6 @@ static eos_ret_t HMD500_state_Process(eos_sm_hmd500_t * const me, eos_event_t co
         case Event_DCM_CtrlOUTCurr:
             //LOG("Event_DCM_CtrlOUTCurr\r\n");
             dcmcurrnum = (uint8_t *)e->data; 
-
 #ifdef Run_AllDCM_mode
             for(int i = 0; i < DCModuleNum; i++)
             {
@@ -615,10 +646,8 @@ static eos_ret_t HMD500_state_Process(eos_sm_hmd500_t * const me, eos_event_t co
                     LOG_error("in Event_DCM_ReadDCMState. channel error!\r\n");
                     return EOS_Ret_Handled;
                 }
-
                 dcm_set_outcurrent(oc_idx, OUTDataValue_Cache.OUTData_DCModule_SetCurr[oc_idx]);
                 dcm_enable_output(oc_idx, OUTDataValue_Cache.OUTData_DCModule_Enable[oc_idx]);  
-
             }
 #endif
             return EOS_Ret_Handled;

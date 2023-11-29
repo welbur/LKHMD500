@@ -33,6 +33,7 @@ uint8_t DCM_Fault_Flag[DCModuleNum];
 uint8_t DCM_Pdet_Flag[DCModuleNum];
 uint8_t DCM_Fault_PinValue_Cache[DCModuleNum];
 uint8_t DCM_Pdet_PinValue_Cache[DCModuleNum];
+float DCM_GetOutCurr_Cache[DCModuleNum];
 DCModule_State_t DCM_State[DCModuleNum];
 
 float DCM_OUTCurr_Max       = 20.0; // 输出最大电流
@@ -42,9 +43,28 @@ float DCM_OUTCurr_Limit     = 0.3;  // 判断有无电流的最小值
 float _KFP_Last_out = 0; // 用于卡尔曼滤波
 KFP KFP_DCM1 = {0.0, 1, 0, 0.0, 0.0, 0.01, 4.5};
 KFP KFP_DCM2 = {0.0, 1, 0, 0.0, 0.0, 0.01, 4.5};
-KFP KFP_DCM3 = {0.0, 1, 0, 0.0, 0.0, 0.01, 4.5};
-KFP KFP_DCM4 = {0.0, 1, 0, 0.0, 0.0, 0.01, 4.5};
-KFP KFP_DCM5 = {0.0, 1, 0, 0.0, 0.0, 0.01, 4.5};
+KFP KFP_DCM3 = {0.0, 1, 0, 0.0, 0.0, 0.005, 2.5};
+KFP KFP_DCM4 = {0.0, 1, 0, 0.0, 0.0, 0.005, 2.5};
+KFP KFP_DCM5 = {0.0, 1, 0, 0.0, 0.0, 0.008, 8.5};
+KFP KFP_DCMV1 = {0.0, 1, 0, 0.0, 0.0, 0.01, 2.5};
+
+/* 输出电流控制信号ctrl，分段比例系数 
+ * 0.8A~1.5A,   1.5A~2.5A,    2.5A~3.5A,    3.5A~4.5A,    4.5A~5.5A,   5.5A~6.5A,   6.5A~7.5A,   7.5A~8.5A,   8.5A~9.5A,   9.5A~10.5A, 
+ * 10.5A~11.5A, 11.5A~12.5A,  12.5A~13.5A,  13.5A~14.5A,  14.5A~15.5A, 15.5A~16.5A, 16.5A~17.5A, 17.5A~18.5A, 18.5A~19.5A, 19.5A~20.0A
+*/
+uint16_t DCM_SetCurr_Gain[] = {1370, 1370, 1358, 1351, 1348, 1342, 1344, 1345, 1343, 1342, 
+                             1338, 1338, 1337, 1338, 1315, 1337, 1337, 1338, 1337, 1340};
+
+/* 输出电流反馈信号curr，分段比例系数 
+ * 0.8A~1.5A,   1.5A~2.5A,    2.5A~3.5A,    3.5A~4.5A,    4.5A~5.5A,   5.5A~6.5A,   6.5A~7.5A,   7.5A~8.5A,   8.5A~9.5A,   9.5A~10.5A,
+ * 10.5A~11.5A, 11.5A~12.5A,  12.5A~13.5A,  13.5A~14.5A,  14.5A~15.5A, 15.5A~16.5A, 16.5A~17.5A, 17.5A~18.5A, 18.5A~19.5A, 19.5A~20.0A
+*/
+uint16_t DCM_OUTCurr_Gain[] = {735, 741, 743, 737, 735, 734, 722, 731, 731, 729, 
+                             727, 727, 727, 727, 727, 727, 727, 728, 729, 732};
+
+uint8_t DCM_SetCurr_Now_Cnt = 0;
+
+
 
 void dcm_init(void)
 {
@@ -54,13 +74,13 @@ void dcm_init(void)
     memset(DCM_Pdet_PinValue_Cache, 0, sizeof(DCM_Pdet_PinValue_Cache));
     memset(DCM_SetOutCurr_Buffer, 0, sizeof(DCM_SetOutCurr_Buffer));
 
-    /*复位所有模拟输出通道*/
-    for (int i = 0; i < DCModuleNum; i++)
-        set_analogout(i, 0);
-
     /*启动所有模拟输出通道*/
     for (int i = 0; i < DCModuleNum; i++)
         start_analogout(i);
+
+    /*复位所有模拟输出通道*/
+    for (int i = 0; i < DCModuleNum; i++)
+        set_analogout(i, 0);
 
     /*启动所有ADC通道*/
     for (int i = 0; i < DCModuleNum; i++)
@@ -148,11 +168,12 @@ uint8_t dcm_set_outcurrent(uint8_t ch, float curr)
             return 0;
         }
     }
-//    LOG("dcm_read_enable_value : %d\r\n", dcm_read_enable_value(ch));
-//    LOG("dcm_set_outcurrent channel %d, curr : %f\r\n", ch, curr);
 
-    float volt = curr * DCM_Gain_Multi / DCM_SetCurr_Gain;
-//    LOG("volt : %f\r\n", volt);
+    DCM_SetCurr_Now_Cnt = round(curr) - 1;
+
+    float volt = curr * DCM_Gain_Multi / DCM_SetCurr_Gain[DCM_SetCurr_Now_Cnt];
+
+    LOG("set curr volt : %f\r\n", volt);
     uint32_t data = (uint32_t)(volt * DCM_DAC_MAX * DCM_Vref_Multi / DCM_Vref);
     set_analogout(ch, data);
     return 1;
@@ -166,51 +187,71 @@ uint8_t dcm_set_outcurrent(uint8_t ch, float curr)
  */
 float dcm_get_outcurrent(uint8_t ch)
 {
-    float currvolt, currkfp;
+    float curr, currvolt, currkfp;
     uint32_t c_u32;
     switch (ch)
     {
-    case DCModule_1:
+    case DCModule_1:    
         c_u32 = DCM_AnalogIn_Buffer.DCM1_ANALOGIN[DCM1_OUTCurr];
         currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-        currkfp = kalmanFilter(&KFP_DCM1, currvolt);
-        currkfp = currkfp * DCM_OUTCurr_Gain / (float)DCM_Gain_Multi;
+        curr = currvolt * DCM_OUTCurr_Gain[DCM_SetCurr_Now_Cnt] / (float)DCM_Gain_Multi;
+        if ((curr > (DCM_SetOutCurr_Buffer[DCModule_1] + 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))
+            curr = DCM_SetOutCurr_Buffer[DCModule_1] + 0.2;
+        else if ((curr < (DCM_SetOutCurr_Buffer[DCModule_1] - 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))  
+            curr = DCM_SetOutCurr_Buffer[DCModule_1] - 0.2;
+        currkfp = kalmanFilter(&KFP_DCM1, curr);
         break;
 
     case DCModule_2:
         c_u32 = DCM_AnalogIn_Buffer.DCM2_ANALOGIN[DCM2_OUTCurr];
         currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-        currkfp = kalmanFilter(&KFP_DCM2, currvolt);
-        currkfp = currkfp * DCM_OUTCurr_Gain / (float)DCM_Gain_Multi;
+        curr = currvolt * DCM_OUTCurr_Gain[DCM_SetCurr_Now_Cnt] / (float)DCM_Gain_Multi;
+        if ((curr > (DCM_SetOutCurr_Buffer[DCModule_2] + 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))
+            curr = DCM_SetOutCurr_Buffer[DCModule_2] + 0.2;
+        else if ((curr < (DCM_SetOutCurr_Buffer[DCModule_2] - 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))  
+            curr = DCM_SetOutCurr_Buffer[DCModule_2] - 0.2;
+        currkfp = kalmanFilter(&KFP_DCM2, curr);
         break;
 
     case DCModule_3:
         c_u32 = DCM_AnalogIn_Buffer.DCM3_ANALOGIN[DCM3_OUTCurr];
         currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-        currkfp = kalmanFilter(&KFP_DCM3, currvolt);
-        currkfp = currkfp * DCM_OUTCurr_Gain / (float)DCM_Gain_Multi;
+        curr = currvolt * DCM_OUTCurr_Gain[DCM_SetCurr_Now_Cnt] / (float)DCM_Gain_Multi;
+        if ((curr > (DCM_SetOutCurr_Buffer[DCModule_3] + 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))      //&& (curr < (DCM_SetOutCurr_Buffer[DCModule_3] + 0.8)))
+            curr = DCM_SetOutCurr_Buffer[DCModule_3] + 0.2;
+        else if ((curr < (DCM_SetOutCurr_Buffer[DCModule_3] - 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))    // && (curr > (DCM_SetOutCurr_Buffer[DCModule_3] - 0.8)))
+            curr = DCM_SetOutCurr_Buffer[DCModule_3] - 0.2;
+        currkfp = kalmanFilter(&KFP_DCM3, curr);
         break;
 
     case DCModule_4:
         c_u32 = DCM_AnalogIn_Buffer.DCM4_ANALOGIN[DCM4_OUTCurr];
         currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-        currkfp = kalmanFilter(&KFP_DCM4, currvolt);
-        currkfp = currkfp * DCM_OUTCurr_Gain / (float)DCM_Gain_Multi;
+        curr = currvolt * DCM_OUTCurr_Gain[DCM_SetCurr_Now_Cnt] / (float)DCM_Gain_Multi;
+        if ((curr > (DCM_SetOutCurr_Buffer[DCModule_4] + 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))      //(curr < (DCM_SetOutCurr_Buffer[DCModule_4] + 0.6)))
+            curr = DCM_SetOutCurr_Buffer[DCModule_4] + 0.2;
+        else if ((curr < (DCM_SetOutCurr_Buffer[DCModule_4] - 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))  
+            curr = DCM_SetOutCurr_Buffer[DCModule_4] - 0.2;
+        currkfp = kalmanFilter(&KFP_DCM4, curr);
         break;
 
     case DCModule_5:
         c_u32 = DCM_AnalogIn_Buffer.DCM5_ANALOGIN[DCM5_OUTCurr];
         currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-        currkfp = kalmanFilter(&KFP_DCM5, currvolt);
+        curr = currvolt * DCM_OUTCurr_Gain[DCM_SetCurr_Now_Cnt] / (float)DCM_Gain_Multi;
+        if ((curr > (DCM_SetOutCurr_Buffer[DCModule_5] + 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))
+            curr = DCM_SetOutCurr_Buffer[DCModule_5] + 0.2;
+        else if ((curr < (DCM_SetOutCurr_Buffer[DCModule_5] - 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))  
+            curr = DCM_SetOutCurr_Buffer[DCModule_5] - 0.2;
+        currkfp = kalmanFilter(&KFP_DCM5, curr);
         //    LOG("curr volt : %f\r\n", currkfp);
-        currkfp = currkfp * DCM_OUTCurr_Gain / (float)DCM_Gain_Multi;
-        //currkfp = kalmanFilter(&KFP_DCM5, curr);
         break;
 
     default:
         LOG_error("get outcurrent error!\r\n");
         return NAN;
     }
+    
 
     return currkfp;
 }
@@ -223,7 +264,7 @@ float dcm_get_outcurrent(uint8_t ch)
  */
 float dcm_get_outvoltage(uint8_t ch)
 {
-    float volt;
+    float volt, volt_v, voltkfp;
     uint32_t v_u32;
     switch (ch)
     {
@@ -251,11 +292,16 @@ float dcm_get_outvoltage(uint8_t ch)
         LOG_error("get OUTVoltage error!\r\n");
         return NAN;
     }
-
-    volt = (float)(v_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-    //    LOG("volt volt : %f\r\n", volt);
-    volt = volt * DCM_OUTVolt_Gain / (float)DCM_Gain_Multi;
-    //    LOG("v_u32 : %lx, volt : %f\r\n", v_u32, volt);
+    //LOG("%ld ", v_u32);
+    volt_v = (float)(v_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
+    
+    volt = volt_v * DCM_OUTVolt_Gain / (float)DCM_Gain_Multi;
+    if (ch == DCModule_1)
+    {
+        LOG("%.3f ", volt_v);
+        voltkfp = kalmanFilter(&KFP_DCMV1, volt_v);
+        LOG("%.3f\r\n", voltkfp);
+    }
     return volt;
 }
 
@@ -286,14 +332,14 @@ DCModule_State_t dcm_get_dcmstate(uint8_t ch)
     }
 
     /* 3. 判断输出是否过载: 30101 */
-    if ((DCM_SetOutCurr_Buffer[ch] != 0) && (dcm_get_outcurrent(ch) - DCM_SetOutCurr_Buffer[ch] > 0.15)) //(DCM_SetOutCurr_Buffer[ch] + 1.0)))
+    if ((DCM_SetOutCurr_Buffer[ch] != 0) && (dcm_get_outcurrent(ch) - DCM_SetOutCurr_Buffer[ch] > 0.3)) //(DCM_SetOutCurr_Buffer[ch] + 1.0)))
     {
         DCM_State[ch] = DCMState_OUT_OverCurr;
         return DCM_State[ch];
     }
 
     /* 4. 判断输出是否断路：30301；断路有几种情况：未接负载、输出线断开、接触不良 */
-    if ((dcm_read_enable_value(ch) == 1) && (dcm_get_outcurrent(ch) > DCM_OUTCurr_Limit) && (dcm_get_outcurrent(ch) < DCM_OUTCurr_Min))
+    if ((dcm_read_enable_value(ch) == Enable_DCM) && (dcm_get_outcurrent(ch) < DCM_OUTCurr_Limit))
     {
         DCM_State[ch] = DCMState_OUT_Break;
         return DCM_State[ch];
@@ -634,10 +680,12 @@ void stop_analogin(uint8_t ch)
  *卡尔曼滤波器
     float LastP;//上次估算协方差 初始化值为0.02
     float Now_P;//当前估算协方差 初始化值为1
+    float Last_out;//上次卡尔曼滤波器输出 初始化值为0
     float out;//卡尔曼滤波器输出 初始化值为0
     float Kg;//卡尔曼增益 初始化值为0
-    float Q;//过程噪声协方差 初始化值为0.0001
+    float Q;//过程噪声协方差 初始化值为0.0001  Q值越大，比较相信测量值；Q值越小，比较相信预测值，Q越小，滤波越平滑，但滤波结果越滞后
     float R;//观测噪声协方差 初始化值为5
+    示例参数：KFP KFP_DCM5 = {0.0, 1, 0, 0.0, 0.0, 0.01, 4.5};
  *@param KFP *kfp 卡尔曼结构体参数
  *   float input 需要滤波的参数的测量值（即传感器的采集值）
  *@return 滤波后的参数（最优值）
@@ -645,7 +693,7 @@ void stop_analogin(uint8_t ch)
 #if 1
 float kalmanFilter(KFP *kfp, float input)
 {
-    if (abs(_KFP_Last_out - input) >= 5)
+    if (abs(_KFP_Last_out - input) >= 2)
         kfp->Last_out = input * 0.382 + kfp->Last_out * 0.618;
 
     // 预测协方差方程：k时刻系统估算协方差 = k-1时刻的系统协方差 + 过程噪声协方差

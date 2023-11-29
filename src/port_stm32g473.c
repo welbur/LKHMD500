@@ -2,6 +2,7 @@
 #include "main.h"
 #include "event_def.h"
 // #include "LOG.h"
+extern IWDG_HandleTypeDef hiwdg;
 
 void eos_port_critical_enter(void)
 {
@@ -30,6 +31,11 @@ void eos_port_assert(eos_u32_t error_id)
 void eos_hook_idle(void)
 {
     EtherCatPDO_ReceiveFrame();
+    if(HAL_IWDG_Refresh(&hiwdg) != HAL_OK)
+    {
+      /* Refresh Error */
+      Error_Handler();
+    }
 }
 
 void eos_hook_start(void)

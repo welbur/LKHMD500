@@ -52,7 +52,7 @@ void MX_ADC1_Init(void)
 	hadc1.Init.OversamplingMode = DISABLE;
 	if (HAL_ADC_Init(&hadc1) != HAL_OK)
 	{
-		printf("HAL_ADC_Init error\r\n");
+		LOG_error("HAL_ADC_Init error\r\n");
 		Error_Handler();
 	}
 
@@ -61,7 +61,7 @@ void MX_ADC1_Init(void)
 	multimode.Mode = ADC_MODE_INDEPENDENT;
 	if (HAL_ADCEx_MultiModeConfigChannel(&hadc1, &multimode) != HAL_OK)
 	{
-		printf("multi mode error\r\n");
+		LOG_error("multi mode error\r\n");
 		Error_Handler();
 	}
 
@@ -75,7 +75,7 @@ void MX_ADC1_Init(void)
 	sConfig.Offset = 0;
 	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
 	{
-		printf(" HAL_ADC_ConfigChannel channel 1 error\r\n");
+		LOG_error(" HAL_ADC_ConfigChannel channel 1 error\r\n");
 		Error_Handler();
 	}
 
@@ -86,7 +86,7 @@ void MX_ADC1_Init(void)
 	sConfig.SamplingTime = ADC_SAMPLETIME_12CYCLES_5;
 	if (HAL_ADC_ConfigChannel(&hadc1, &sConfig) != HAL_OK)
 	{
-		printf(" HAL_ADC_ConfigChannel channel 2 error\r\n");
+		LOG_error(" HAL_ADC_ConfigChannel channel 2 error\r\n");
 		Error_Handler();
 	}
 	/* USER CODE BEGIN ADC1_Init 2 */
@@ -418,10 +418,14 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
 		PA0     ------> ADC1_IN1
 		PA1     ------> ADC1_IN2
 		*/
-		GPIO_InitStruct.Pin = DCM2_Volt_Pin | DCM2_Curr_Pin;
+		GPIO_InitStruct.Pin = DCM2_Volt_Pin;
 		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		HAL_GPIO_Init(DCM2_Volt_Port, &GPIO_InitStruct);
+		GPIO_InitStruct.Pin = DCM2_Curr_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		HAL_GPIO_Init(DCM2_Curr_Port, &GPIO_InitStruct);
 
 		/* ADC1 DMA Init */
 		/* ADC1 Init */
@@ -472,10 +476,14 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
 		PC0     ------> ADC2_IN6
 		PC1     ------> ADC2_IN7
 		*/
-		GPIO_InitStruct.Pin = DCM1_Volt_Pin | DCM1_Curr_Pin;
+		GPIO_InitStruct.Pin = DCM1_Volt_Pin;
 		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+		HAL_GPIO_Init(DCM1_Volt_Port, &GPIO_InitStruct);
+		GPIO_InitStruct.Pin = DCM1_Curr_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		HAL_GPIO_Init(DCM1_Curr_Port, &GPIO_InitStruct);
 
 		/* ADC2 DMA Init */
 		/* ADC2 Init */
@@ -525,10 +533,14 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
 		PB0     ------> ADC3_IN12
 		PB1     ------> ADC3_IN1
 		*/
-		GPIO_InitStruct.Pin = DCM3_Volt_Pin | DCM3_Curr_Pin;
+		GPIO_InitStruct.Pin = DCM3_Volt_Pin;
 		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+		HAL_GPIO_Init(DCM3_Volt_Port, &GPIO_InitStruct);
+		GPIO_InitStruct.Pin = DCM3_Curr_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		HAL_GPIO_Init(DCM3_Curr_Port, &GPIO_InitStruct);
 
 		/* ADC3 DMA Init */
 		/* ADC3 Init */
@@ -578,10 +590,14 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
 		PB14     ------> ADC4_IN4
 		PB15     ------> ADC4_IN5
 		*/
-		GPIO_InitStruct.Pin = DCM4_Volt_Pin | DCM4_Curr_Pin;
+		GPIO_InitStruct.Pin = DCM4_Volt_Pin;
 		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+		HAL_GPIO_Init(DCM4_Volt_Port, &GPIO_InitStruct);
+		GPIO_InitStruct.Pin = DCM4_Curr_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		HAL_GPIO_Init(DCM4_Curr_Port, &GPIO_InitStruct);
 
 		/* ADC4 DMA Init */
 		/* ADC4 Init */
@@ -631,10 +647,14 @@ void HAL_ADC_MspInit(ADC_HandleTypeDef *hadc)
 		PA8     ------> ADC5_IN1
 		PA9     ------> ADC5_IN2
 		*/
-		GPIO_InitStruct.Pin = DCM5_Volt_Pin | DCM5_Curr_Pin;
+		GPIO_InitStruct.Pin = DCM5_Volt_Pin;
 		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
 		GPIO_InitStruct.Pull = GPIO_NOPULL;
-		HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+		HAL_GPIO_Init(DCM5_Volt_Port, &GPIO_InitStruct);
+		GPIO_InitStruct.Pin = DCM5_Curr_Pin;
+		GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+		GPIO_InitStruct.Pull = GPIO_NOPULL;
+		HAL_GPIO_Init(DCM5_Curr_Port, &GPIO_InitStruct);
 
 		/* ADC5 DMA Init */
 		/* ADC5 Init */
@@ -688,7 +708,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc)
 		PA0     ------> ADC1_IN1
 		PA1     ------> ADC1_IN2
 		*/
-		HAL_GPIO_DeInit(GPIOA, DCM2_Volt_Pin | DCM2_Curr_Pin);
+		HAL_GPIO_DeInit(DCM2_Volt_Port, DCM2_Volt_Pin);
+		HAL_GPIO_DeInit(DCM2_Curr_Port, DCM2_Curr_Pin);
 
 		/* ADC1 DMA DeInit */
 		HAL_DMA_DeInit(hadc->DMA_Handle);
@@ -713,7 +734,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc)
 		PC0     ------> ADC2_IN6
 		PC1     ------> ADC2_IN7
 		*/
-		HAL_GPIO_DeInit(GPIOC, DCM1_Volt_Pin | DCM1_Curr_Pin);
+		HAL_GPIO_DeInit(DCM1_Volt_Port, DCM1_Volt_Pin);
+		HAL_GPIO_DeInit(DCM1_Curr_Port, DCM1_Curr_Pin);
 
 		/* ADC2 DMA DeInit */
 		HAL_DMA_DeInit(hadc->DMA_Handle);
@@ -737,7 +759,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc)
 		PB0     ------> ADC3_IN12
 		PB1     ------> ADC3_IN1
 		*/
-		HAL_GPIO_DeInit(GPIOB, DCM3_Volt_Pin | DCM3_Curr_Pin);
+		HAL_GPIO_DeInit(DCM3_Volt_Port, DCM3_Volt_Pin);
+		HAL_GPIO_DeInit(DCM3_Curr_Port, DCM3_Curr_Pin);
 
 		/* ADC3 DMA DeInit */
 		HAL_DMA_DeInit(hadc->DMA_Handle);
@@ -761,7 +784,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc)
 		PB14     ------> ADC4_IN4
 		PB15     ------> ADC4_IN5
 		*/
-		HAL_GPIO_DeInit(GPIOB, DCM4_Volt_Pin | DCM4_Curr_Pin);
+		HAL_GPIO_DeInit(DCM4_Volt_Port, DCM4_Volt_Pin);
+		HAL_GPIO_DeInit(DCM4_Curr_Port, DCM4_Curr_Pin);
 
 		/* ADC4 DMA DeInit */
 		HAL_DMA_DeInit(hadc->DMA_Handle);
@@ -785,7 +809,8 @@ void HAL_ADC_MspDeInit(ADC_HandleTypeDef *hadc)
 		PA8     ------> ADC5_IN1
 		PA9     ------> ADC5_IN2
 		*/
-		HAL_GPIO_DeInit(GPIOA, DCM5_Volt_Pin | DCM5_Curr_Pin);
+		HAL_GPIO_DeInit(DCM5_Volt_Port, DCM5_Volt_Pin);
+		HAL_GPIO_DeInit(DCM5_Curr_Port, DCM5_Curr_Pin);
 
 		/* ADC5 DMA DeInit */
 		HAL_DMA_DeInit(hadc->DMA_Handle);

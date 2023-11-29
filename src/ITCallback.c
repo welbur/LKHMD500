@@ -58,7 +58,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 		else
 		{
 			LOG_error("EtherCatPDO receive it error!\r\n");
-			Error_Handler();
+			//Error_Handler();
 		}
 	}
 
