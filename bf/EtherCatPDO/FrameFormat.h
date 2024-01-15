@@ -255,7 +255,7 @@ OBJHandle OBJ_DCModule_SetPWM     = {
  *  |_________________|______________|______________|______________|_______________|________________|
 */
 const uint32_t venderID                 = 0x00001234;   //正常是由ethercat联盟提供，暂时随机填一个
-const uint32_t productCode              = 0x20231207;   //变更属性表需要更改产品代码
+const uint32_t productCode              = 0x20231206;   //变更属性表需要更改产品代码
 const uint32_t revisionNumber           = 0x00000001;   //修订号
 const uint32_t productSN                = 0x20230500;   //产品序号 前四个表示年份，后4个表示型号 0x20230200表示2023年开发的型号为LKHM200
 const char CompanyName[]                = "Butup\0";

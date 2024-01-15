@@ -267,8 +267,8 @@
 /*********************************************************************************
  * @brief 5、 电源模块 3 的引脚信息
  *           *  ADC输入
- *              PB0     ------> ADC3_IN12   ------> DCM3_Curr   用于检测输出电流
  *              PB1     ------> ADC3_IN1    ------> DCM3_Volt   用于检测输出电压
+ *              PB0     ------> ADC3_IN12   ------> DCM3_Curr   用于检测输出电流
  *           *  DAC输出
  *              PA6     ------> DAC2_OUT1   ------> DCM3_Ictrl  用于控制输出电流大小           
  *           *  输出控制信号
@@ -320,6 +320,95 @@
 #define DCM3_Pdet_Pin_EXTI_IRQn           EXTI9_5_IRQn
 #endif
 
+
+#ifdef DCM4_Reversed_DCM5
+/* DCM4 */
+#ifdef LKHMD500MainB
+//ADC引脚
+#define ADC5_IN2_Pin                      GPIO_PIN_9  
+#define DCM4_Volt_Pin                     ADC5_IN2_Pin
+#define DCM4_Volt_Port                    GPIOA
+#define DCM4_Volt_Pin_CLK_ENABLE()            __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM4_Volt_Pin_CLK_DISABLE()           __HAL_RCC_GPIOA_CLK_DISABLE()
+
+#define ADC5_IN1_Pin                      GPIO_PIN_8
+#define DCM4_Curr_Pin                     ADC5_IN1_Pin
+#define DCM4_Curr_Port                    GPIOA
+#define DCM4_Curr_Pin_CLK_ENABLE()        __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM4_Curr_Pin_CLK_DISABLE()       __HAL_RCC_GPIOA_CLK_DISABLE()
+
+//DAC引脚                          
+#define OPAMP4_VOUT_Pin                   GPIO_PIN_12
+#define DCM4_Ictrl_Pin                    OPAMP4_VOUT_Pin
+#define DCM4_Ictrl_Port                   GPIOB
+#define DCM4_Ictrl_Pin_CLK_ENABLE()       __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM4_Ictrl_Pin_CLK_DISABLE()      __HAL_RCC_GPIOB_CLK_DISABLE()
+
+//输出控制信号
+#define DCM4_EN_Pin                       GPIO_PIN_9
+#define DCM4_EN_Port                      GPIOC
+#define DCM4_EN_Pin_CLK_ENABLE()          __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM4_EN_Pin_CLK_DISABLE()         __HAL_RCC_GPIOC_CLK_DISABLE()
+
+//输入信号
+#define DCM4_Fault_Pin                    GPIO_PIN_8
+#define DCM4_Fault_Port                   GPIOC
+#define DCM4_Fault_Pin_CLK_ENABLE()       __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM4_Fault_Pin_CLK_DISABLE()      __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DCM4_Fault_Pin_EXTI_IRQn          EXTI9_5_IRQn
+#endif
+
+//输入信号
+#define DCM4_Pdet_Pin                     GPIO_PIN_2
+#define DCM4_Pdet_Port                    GPIOD
+#define DCM4_Pdet_Pin_CLK_ENABLE()        __HAL_RCC_GPIOD_CLK_ENABLE()
+#define DCM4_Pdet_Pin_CLK_DISABLE()       __HAL_RCC_GPIOD_CLK_DISABLE()
+#define DCM4_Pdet_Pin_EXTI_IRQn           EXTI2_IRQn
+
+/* DCM5 */
+#ifdef LKHMD500MainB
+//ADC引脚
+#define ADC4_IN4_Pin                      GPIO_PIN_14  
+#define DCM5_Volt_Pin                     ADC4_IN4_Pin
+#define DCM5_Volt_Port                    GPIOB
+#define DCM5_Volt_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM5_Volt_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
+
+#define ADC4_IN5_Pin                      GPIO_PIN_15
+#define DCM5_Curr_Pin                     ADC4_IN5_Pin
+#define DCM5_Curr_Port                    GPIOB
+#define DCM5_Curr_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM5_Curr_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
+
+//DAC引脚                          
+#define OPAMP1_OUT_Pin                    GPIO_PIN_2
+#define DCM5_Ictrl_Pin                    OPAMP1_OUT_Pin
+#define DCM5_Ictrl_Port                   GPIOA
+#define DCM5_Ictrl_Pin_CLK_ENABLE()       __HAL_RCC_GPIOA_CLK_ENABLE()
+#define DCM5_Ictrl_Pin_CLK_DISABLE()      __HAL_RCC_GPIOA_CLK_DISABLE()
+
+//输出控制信号
+#define DCM5_EN_Pin                       GPIO_PIN_13
+#define DCM5_EN_Port                      GPIOB
+#define DCM5_EN_Pin_CLK_ENABLE()          __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM5_EN_Pin_CLK_DISABLE()         __HAL_RCC_GPIOB_CLK_DISABLE()
+
+//输入信号
+#define DCM5_Fault_Pin                    GPIO_PIN_6
+#define DCM5_Fault_Port                   GPIOC
+#define DCM5_Fault_Pin_CLK_ENABLE()       __HAL_RCC_GPIOC_CLK_ENABLE()
+#define DCM5_Fault_Pin_CLK_DISABLE()      __HAL_RCC_GPIOC_CLK_DISABLE()
+#define DCM5_Fault_Pin_EXTI_IRQn          EXTI9_5_IRQn
+
+//输入信号
+#define DCM5_Pdet_Pin                     GPIO_PIN_3
+#define DCM5_Pdet_Port                    GPIOB
+#define DCM5_Pdet_Pin_CLK_ENABLE()        __HAL_RCC_GPIOB_CLK_ENABLE()
+#define DCM5_Pdet_Pin_CLK_DISABLE()       __HAL_RCC_GPIOB_CLK_DISABLE()
+#define DCM5_Pdet_Pin_EXTI_IRQn           EXTI3_IRQn
+#endif
+
+#else
 /*********************************************************************************
  * @brief 6、 电源模块 4 的引脚信息
  *           *  ADC输入
@@ -433,6 +522,9 @@
 #define DCM5_Pdet_Pin_CLK_DISABLE()       __HAL_RCC_GPIOD_CLK_DISABLE()
 #define DCM5_Pdet_Pin_EXTI_IRQn           EXTI2_IRQn
 #endif
+
+#endif      //DCM4_Reserved_DCM5
+
 
 /*********************************************************************************
  * @brief 8、 按键和led引脚定义

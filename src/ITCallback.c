@@ -11,6 +11,7 @@
 #include "DCMCtrl.h"
 #include "eventos.h"   // EventOS Nano头文件
 
+extern UART_HandleTypeDef huart3;
 
 
 //DCM_Fault_h.EXTIPinCnt[] = {0, 0, 0, 0, 0};
@@ -60,6 +61,9 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *UartHandle)
 			LOG_error("EtherCatPDO receive it error!\r\n");
 			//Error_Handler();
 		}
+	} else if (UartHandle == &huart3)
+	{
+//		LOG("read data from usart3\r\n");
 	}
 
 }

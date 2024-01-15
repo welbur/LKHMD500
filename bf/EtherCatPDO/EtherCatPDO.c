@@ -260,10 +260,7 @@ uint8_t EtherCatPDO_ReceiveFrame(void)
     
     /* 获取LAN9255的状态 */
     else if ((eMsgH.MsgType - MsgTypeBack) == GetStatus_MsgType)       // 0x81 - 0x80 = 0x01
-    {
-        //LOG("ethercat pdo\r\n");
         eos_event_pub(Event_ECAT_ReadLAN9255State_RecvRSP, (void *)eMsgH.data, eMsgH.len);
-    }
     
     /* 添加属性表*/
     else if ((eMsgH.MsgType - MsgTypeBack) == AddParaList_MsgType)          // 0x81 - 0x80 = 0x01

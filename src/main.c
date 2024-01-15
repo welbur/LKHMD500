@@ -97,6 +97,7 @@ int main(void)
 
 	MX_USB_Device_Init();
 	
+#if 1
 	/*##-1- Check if the system has resumed from IWDG reset ####################*/
 	if (__HAL_RCC_GET_FLAG(RCC_FLAG_IWDGRST) != 0x00u)
 	{
@@ -104,7 +105,7 @@ int main(void)
 		IwdgStatus = 1;
 		WorkLed(1);
 		/* Insert 4s delay */
-		HAL_Delay(3000);
+		HAL_Delay(5000);
 		/* Notification done: Turn LED2 off */
 		WorkLed(0);
 	}
@@ -115,7 +116,7 @@ int main(void)
 
 	/*##-2- Configure & Start the IWDG peripheral #########################################*/
 	MX_IWDG_Init();
-
+#endif
 
 	/* Initialize all configured peripherals */
 	
@@ -139,14 +140,51 @@ int main(void)
 	MX_ADC4_Init();
 	MX_ADC5_Init();
 
+	if (ee_init() == false)
+		LOG_error("EEPROM Init faild!"); 
+//	HAL_Delay(5000);
+//	ee_testWriteandRead();
+#if 0	
+	/* 先将FLASH 第127页面清零 */
+	uint8_t eereaddata[2];
+	if (ee_read(0, sizeof(eereaddata), eereaddata) == false)
+        LOG_error("read eeprom data faild!\r\n");
+	LOG("eereaddata : %x%x\r\n", eereaddata[0], eereaddata[1]);
+	if (eereaddata[0] != 0xA5 || eereaddata[1] != 0xA5)
+	{
+		if (ee_ClearFLASHPage() == false)
+		{
+			LOG_error("clear flash page fault!\r\n");
+			Error_Handler();
+		}
+	}
+#endif
+#if 0	//测试用
+	//HAL_Delay(5000);
+	uint8_t eereaddata[2];
+	if (ee_read(0, sizeof(eereaddata), eereaddata) == false)
+        LOG_error("read eeprom data faild!\r\n");
+	LOG("eereaddata : %x%x\r\n", eereaddata[0], eereaddata[1]);
+	if (eereaddata[0] != 0xA5 || eereaddata[1] != 0xA5)
+	{
+		uint8_t eett1[2] = {0xA5, 0xA5};
+		LOG("~~~~~~~~~~~~~~~~~");
+		ee_writeToRam(0, sizeof(eett1), eett1);
+    	if (ee_commit() == false)
+        	LOG_error("EEPROM Commit faild\r\n");
+	}
+	if (ee_read(0, sizeof(eereaddata), eereaddata) == false)
+        LOG_error("read eeprom data faild!\r\n");
+	LOG("writeok ....... eereaddata : %x%x\r\n", eereaddata[0], eereaddata[1]);
+#endif
 	//MX_USB_Device_Init();
-	LOG("Initialize all configured peripherals OK!\r\n");
 
+	LOG_info("Initialize all configured peripherals OK!\r\n");
 
 	/* 初始化恒流模块相关参数 */
 	dcm_init();
 
-#if 1
+
 	/*1、 第一步，先添加属性表，主要是OBJ 和 body的主要参数*/
 	// 输入属性表，Record类型，一个obj可以对应多个body
 	EtherCatPDO_AddOBJ(INDataValue.INData_DCModule_Curr, TYPE_FLOAT, INDIR, DCModuleNum, "DCM Curr\0");
@@ -156,22 +194,29 @@ int main(void)
 	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_Enable[0], TYPE_UINT8, OUTDIR, 1, "DCM_1 Active\0");
 	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_Enable[1], TYPE_UINT8, OUTDIR, 1, "DCM_2 Active\0");
 	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_Enable[2], TYPE_UINT8, OUTDIR, 1, "DCM_3 Active\0");
-	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_Enable[3], TYPE_UINT8, OUTDIR, 1, "DCM_4 Active\0");
-	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_Enable[4], TYPE_UINT8, OUTDIR, 1, "DCM_5 Active\0");
+	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_Enable[3], TYPE_UINT8, OUTDIR, 1, "DCM_4 Active\0");			
+	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_Enable[4], TYPE_UINT8, OUTDIR, 1, "DCM_5 Active\0");			
 
 	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_SetCurr[0], TYPE_FLOAT, OUTDIR, 1, "Set DCM_1 Curr\0");
 	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_SetCurr[1], TYPE_FLOAT, OUTDIR, 1, "Set DCM_2 Curr\0");
 	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_SetCurr[2], TYPE_FLOAT, OUTDIR, 1, "Set DCM_3 Curr\0");
-	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_SetCurr[3], TYPE_FLOAT, OUTDIR, 1, "Set DCM_4 Curr\0");
-	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_SetCurr[4], TYPE_FLOAT, OUTDIR, 1, "Set DCM_5 Curr\0");
+	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_SetCurr[3], TYPE_FLOAT, OUTDIR, 1, "Set DCM_4 Curr\0");		
+	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_SetCurr[4], TYPE_FLOAT, OUTDIR, 1, "Set DCM_5 Curr\0");		
+
+#ifdef USE_AdjustFunc
+	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_AdjustOUTCurr[0], TYPE_UINT8, OUTDIR, 1, "Adj DCM_1 Curr\0");
+	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_AdjustOUTCurr[1], TYPE_UINT8, OUTDIR, 1, "Adj DCM_2 Curr\0");
+	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_AdjustOUTCurr[2], TYPE_UINT8, OUTDIR, 1, "Adj DCM_3 Curr\0");
+	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_AdjustOUTCurr[3], TYPE_UINT8, OUTDIR, 1, "Adj DCM_4 Curr\0");		
+	EtherCatPDO_AddOBJ(&OUTDataValue.OUTData_DCModule_AdjustOUTCurr[4], TYPE_UINT8, OUTDIR, 1, "Adj DCM_5 Curr\0");		
+#endif
 
 	/*2、 第二步，初始化跟LAN9255的通信协议 */
 	EtherCatPDOH.devName = "HMD500";
 	EtherCatPDOH.port = &huart1;
-	EtherCatPDOH.read_LAN9255State_interval = 1500;
+//	EtherCatPDOH.read_LAN9255State_interval = 1500;
 
 	EtherCatPDO_Init(&EtherCatPDOH);
-#endif
 
 
 	/* 初始化eventos系统:状态机系统 */
@@ -191,8 +236,9 @@ int main(void)
 	eos_sm_led_init();		   // LED状态机初始化(打印LOG，需要测试某功能的时候也在这个状态中添加)
 	eos_sm_EtherCatPDO_init(); // EtherCatPDO状态机初始化
 	eos_sm_HMD500_init();	   // HMD500状态机初始化
+	
 #endif
-
+	LOG_info("goto run eos\r\n");
 	eos_run(); // EventOS启动
 
 	while (1)
@@ -329,6 +375,7 @@ static void MX_IWDG_Init(void)
 
 	/* USER CODE END IWDG_Init 2 */
 }
+
 
 /**
  * @brief  This function is executed in case of error occurrence.

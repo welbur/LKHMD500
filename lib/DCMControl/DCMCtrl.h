@@ -9,6 +9,7 @@
 #include "BoardConfig.h"
 #include "MSP_GPIO.h"
 
+#define USE_KFP			//如果使用KFP的话，就定义这个
 
 /* 恒流模块的使能引脚 */
 #define DCM1_EN(n)			(n?HAL_GPIO_WritePin(DCM1_EN_Port, DCM1_EN_Pin, GPIO_PIN_SET):HAL_GPIO_WritePin(DCM1_EN_Port, DCM1_EN_Pin, GPIO_PIN_RESET))
@@ -25,11 +26,12 @@
 #define DCM_ADC_Resolution      12
 #define DCM_ADC_MAX             ((1 << DCM_ADC_Resolution) - 1)
 
-//#define DCM_SetCurr_Gain			    1250	//设置输出电流是的比例系数：1.6V对应的是20A    1.6 * 12.5 = 20A
 #define DCM_OUTCurr_Gain_O			    755		//旧板， 读取输出电流的比例系数：  2.65V对应的是20A   2.65 * 7.55 = 20A		
-//#define DCM_OUTCurr_Gain_N			    663		//新板2023-11-06， 读取输出电流的比例系数：  2.65V对应的是20A   3 * 6.63 = 20A	
+
 #define DCM_OUTVolt_Gain			    833		//读取输出电压的比例系数：  3.0V对应的是25V    3.0 * 8.33 = 25V  
 #define DCM_Gain_Multi        			100
+
+#define DCM_Gain_Num      			    20 
 
 
 #define DCM_ANALOGIN_Size       2  
@@ -38,17 +40,38 @@
 #define DCM1_OUTVolt_Index			1
 #define DCM2_OUTVolt_Index			0
 #define DCM2_OUTCurr_Index			1
-#define DCM3_OUTCurr_Index			0
-#define DCM3_OUTVolt_Index			1
+#define DCM3_OUTCurr_Index			1
+#define DCM3_OUTVolt_Index			0
 #define DCM4_OUTVolt_Index			0
 #define DCM4_OUTCurr_Index			1
 #define DCM5_OUTCurr_Index			0
 #define DCM5_OUTVolt_Index			1
 
-extern float DCM_OUTCurr_Max;      // 输出最大电流
-extern float DCM_OUTCurr_Min;      // 输出最小电流
-extern float DCM_OUTCurr_Limit;   // 判断有无电流的最小值
+//extern float DCM_OUTCurr_Max;      // 输出最大电流
+//extern float DCM_OUTCurr_Min;      // 输出最小电流
+//extern float DCM_OUTCurr_Limit;   // 判断有无电流的最小值
 
+//测试用
+extern float Get_OUTCurr_Volt[DCModuleNum];
+extern float Get_SetCurr_Volt[DCModuleNum]; 
+
+extern uint8_t DCM_SetCurr_Now_Cnt[DCModuleNum];
+
+
+/* PLC发送过来的校准参数的标记，PLC发送过来的调整电流值时，状态的变化 */
+typedef enum 
+{
+	DCM_Adjust_FromPLC_Save_Err        = -2,        //保存参数失败
+	DCM_Adjust_FromPLC_SetData_Err     = -1,        //设置参数超过范围
+    DCM_Adjust_FromPLC_Default         = 0,        //默认状态，未收到校准参数
+    DCM_Adjust_FromPLC_Goto            = 1,        //正在校准，就是将PLC发送过来的数据，线保存到DCM_AdjustOUTCurr_FromPLC[]中
+    DCM_Adjust_FromPLC_Doing           = 2,        //校准完成，将参数保存到FLASH中
+	DCM_Adjust_FromPLC_Saved           = 3,        //校准完成，将参数保存到FLASH中
+} DCM_Adjust_FromPLC_t;
+
+#ifdef USE_AdjustFunc
+extern DCM_Adjust_FromPLC_t DCM_Adjust_Flag[DCModuleNum];
+#endif
 
 /* 输出电流控制信号ctrl采用分段比例放大的方式 */
 typedef struct
@@ -116,6 +139,10 @@ typedef enum
 	DCMState_Work		   		= 10201,		//工作
 	DCMState_Stop				= 10401,		//停止
 
+	DCMState_Adjust_Doing		= 10501,		//正在调整电流值
+	DCMState_Adjust_Done		= 10502,		//调整电流值完成，
+	DCMState_Adjust_Saved		= 10503,		//已保存到FLASH中
+
 	DCMState_OUT_OverCurr		= 30101,		//输出电流过大，报此错误: 30101~30105
 	DCMState_IN_NoVolt			= 30201,		//是否有输入电压，没有输入电压，报此错误: 30201~30205
 	DCMState_OUT_Break			= 30301,		//输出断路，报此错误: 30301~30305
@@ -127,6 +154,7 @@ typedef enum
 	DCMState_OUT_OverVolt		= 30901,		//输出电压过大
 
 	DCMState_Set_OutCurr_Err	= 40101,		//设置输出电流值错误 超过20A，或者小于0.8A
+	DCMState_Set_AdjustCurr_Err = 40201,		//设置调整电流值错误 超过150%，或者小于50%
 } DCModule_State_t;
 
 
@@ -198,12 +226,19 @@ typedef struct
 
 
 void dcm_init(void);
+void open_dcm_outcurr(uint8_t ch, float curr);
+void close_dcm_outcurr(uint8_t ch);
 uint8_t dcm_enable_output(uint8_t ch, uint8_t en);
 uint8_t dcm_read_enable_value(uint8_t ch);
 uint8_t dcm_set_outcurrent(uint8_t ch, float value);
+uint8_t dcm_set_adjustcurr(uint8_t ch, uint8_t value);
+
 float dcm_get_outcurrent(uint8_t ch);
 float dcm_get_outvoltage(uint8_t ch);
 DCModule_State_t dcm_get_dcmstate(uint8_t ch);
+#ifdef USE_AdjustFunc
+void dcm_write_adjustflag(uint8_t ch, DCM_Adjust_FromPLC_t dcmadj);
+#endif
 uint8_t dcm_get_dcmfault(uint8_t ch);
 uint8_t dcm_read_fault_value(uint8_t ch);
 uint8_t dcm_get_pdet(uint8_t ch);
@@ -215,8 +250,11 @@ void set_analogout(uint8_t ch, uint32_t value);
 void start_analogin(uint8_t ch);
 void stop_analogin(uint8_t ch);
 
+void dcm_read_data_fromFLASH(void);
+
 //float kalmanFilter(float ADC_Value);
 float kalmanFilter(KFP *kfp, float input);
+KFP* KFP_DCM_Curr_Index(uint8_t ch);
 
 char *DCModule_State_Log(DCModule_State_t dcmstate);
 

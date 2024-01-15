@@ -25,6 +25,11 @@ extern LAN9255State_t L9255State;
 
 enum
 {
+    PeriodTime_2ms 	            = 2,
+    PeriodTime_5ms 	            = 5,
+    PeriodTime_10ms 	        = 10,
+    PeriodTime_20ms 	        = 20,
+    PeriodTime_50ms 	        = 50,
 	PeriodTime_100ms 	        = 100,
     PeriodTime_200ms            = 200,
     PeriodTime_500ms            = 500,
@@ -39,6 +44,7 @@ enum {
     Event_WorkLed_Blink,
     Event_PrintLOG,
 //    Event_EtherCAT_Process,
+    Event_ECAT_WaitInit,
     Event_ECAT_Start_InitLAN9255,
     Event_ECAT_END_InitLAN9255,
     Event_ECAT_RestartLAN9255S_SendCMD,
@@ -58,13 +64,20 @@ enum {
     Event_ECAT_WriteDataToLAN9255_RecvRSP,
     Event_ECAT_SendCMD_TIMEOUT,
     
-    Event_ECAT_StartEtherCat,
-    Event_ECAT_CancelEtherCat,
-    Event_ECAT_StartTransData,
-    Event_ECAT_CancelTransData,
+    Event_HMD_WaitStart,
+    Event_HMD_Start_MainFSM,
+    Event_HMD_End_MainFSM,
+//    Event_ECAT_StartTransData,
+//    Event_ECAT_CancelTransData,
 
     Event_DCM_ReadDCMState,
     Event_DCM_CtrlOUTCurr,
+    Event_DCM_Adjust,  
+    Event_DCM_Save_AdjustPara,                 
+
+    Event_DCM_Calibrate,
+    Event_DCM_ReadDataFromPC_Recv,
+    Event_DCM_SendDataToPC_Send,
 
     Event_Button,
     Event_UserTest,

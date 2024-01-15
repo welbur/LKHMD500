@@ -7,6 +7,8 @@
 #include "MSP_DAC.h"
 #include "math.h"
 #include <stdlib.h>
+#include "ee.h"
+#include "eeConfig.h"
 
 extern ADC_HandleTypeDef hadc1;
 extern ADC_HandleTypeDef hadc2;
@@ -28,7 +30,9 @@ extern OPAMP_HandleTypeDef hopamp4;
 
 DCModule_AnalogIn_t DCM_AnalogIn_Buffer;
 
-float DCM_SetOutCurr_Buffer[DCModuleNum];
+float DCM_SetOutCurr_Buffer[DCModuleNum];           //用于保存设置的输出电流值
+uint8_t DCM_Adjust_OutCurr_Buffer[DCModuleNum] = {100, 100, 100, 100, 100};     //用于保存设置的调整电流的百分比值
+
 uint8_t DCM_Fault_Flag[DCModuleNum];
 uint8_t DCM_Pdet_Flag[DCModuleNum];
 uint8_t DCM_Fault_PinValue_Cache[DCModuleNum];
@@ -40,29 +44,64 @@ float DCM_OUTCurr_Max       = 20.0; // 输出最大电流
 float DCM_OUTCurr_Min       = 0.8;  // 输出最小电流
 float DCM_OUTCurr_Limit     = 0.3;  // 判断有无电流的最小值
 
+/********************** 需要在其他文件中使用的参数，全局变量 ***************************/
+float Get_OUTCurr_Volt[DCModuleNum];
+float Get_SetCurr_Volt[DCModuleNum] = {0, 0, 0, 0, 0};
+
+uint8_t DCM_SetCurr_Now_Cnt[DCModuleNum] = {0, 0, 0, 0, 0};
+
+
+#ifdef USE_AdjustFunc
+DCM_Adjust_FromPLC_t DCM_Adjust_Flag[DCModuleNum] = {0, 0, 0, 0, 0};
+#endif
+
+/*********************************************************************************/
+
 float _KFP_Last_out = 0; // 用于卡尔曼滤波
 KFP KFP_DCM1 = {0.0, 1, 0, 0.0, 0.0, 0.01, 4.5};
 KFP KFP_DCM2 = {0.0, 1, 0, 0.0, 0.0, 0.01, 4.5};
-KFP KFP_DCM3 = {0.0, 1, 0, 0.0, 0.0, 0.005, 2.5};
-KFP KFP_DCM4 = {0.0, 1, 0, 0.0, 0.0, 0.005, 2.5};
+KFP KFP_DCM3 = {0.0, 1, 0, 0.0, 0.0, 0.01, 2.5};
+KFP KFP_DCM4 = {0.0, 1, 0, 0.0, 0.0, 0.01, 2.5};
 KFP KFP_DCM5 = {0.0, 1, 0, 0.0, 0.0, 0.008, 8.5};
-KFP KFP_DCMV1 = {0.0, 1, 0, 0.0, 0.0, 0.01, 2.5};
+//KFP KFP_DCMV1 = {0.0, 1, 0, 0.0, 0.0, 0.01, 2.5};
+
+
+#ifdef USE_EEPROMFunc
+uint8_t have_para_inflash = 0;              //用于判断参数是否在flash中
+#endif
+
+
 
 /* 输出电流控制信号ctrl，分段比例系数 
  * 0.8A~1.5A,   1.5A~2.5A,    2.5A~3.5A,    3.5A~4.5A,    4.5A~5.5A,   5.5A~6.5A,   6.5A~7.5A,   7.5A~8.5A,   8.5A~9.5A,   9.5A~10.5A, 
  * 10.5A~11.5A, 11.5A~12.5A,  12.5A~13.5A,  13.5A~14.5A,  14.5A~15.5A, 15.5A~16.5A, 16.5A~17.5A, 17.5A~18.5A, 18.5A~19.5A, 19.5A~20.0A
 */
-uint16_t DCM_SetCurr_Gain[] = {1370, 1370, 1358, 1351, 1348, 1342, 1344, 1345, 1343, 1342, 
-                             1338, 1338, 1337, 1338, 1315, 1337, 1337, 1338, 1337, 1340};
+//调高，电流减小
+uint16_t DCM_SetCurr_Gain_Default[DCModuleNum][DCM_Gain_Num] = {
+    /* 1     2     3     4     5     6     7     8     9     10    11    12    13    14    15    16    17    18    19    20    */
+    {1344, 1340, 1354, 1352, 1351, 1351, 1348, 1345, 1344, 1337, 1327, 1322, 1320, 1318, 1315, 1312, 1310, 1308, 1308, 1308},   //DCM1
+    {1336, 1336, 1356, 1354, 1354, 1353, 1349, 1345, 1341, 1333, 1326, 1323, 1321, 1320, 1317, 1315, 1311, 1313, 1313, 1313},   //DCM2 5
+    {1334, 1370, 1363, 1362, 1364, 1362, 1358, 1352, 1341, 1331, 1327, 1324, 1322, 1320, 1318, 1317, 1317, 1316, 1317, 1317},   //DCM3 ok
+    {1334, 1334, 1332, 1348, 1349, 1348, 1347, 1345, 1341, 1334, 1323, 1318, 1315, 1313, 1311, 1310, 1309, 1307, 1305, 1305},   //DCM4
+    {1345, 1343, 1359, 1356, 1358, 1358, 1355, 1350, 1345, 1334, 1324, 1320, 1319, 1317, 1316, 1315, 1313, 1312, 1312, 1312},   //DCM5     
+};
+uint16_t DCM_SetCurr_Gain_Flash[DCModuleNum][DCM_Gain_Num];
+
 
 /* 输出电流反馈信号curr，分段比例系数 
  * 0.8A~1.5A,   1.5A~2.5A,    2.5A~3.5A,    3.5A~4.5A,    4.5A~5.5A,   5.5A~6.5A,   6.5A~7.5A,   7.5A~8.5A,   8.5A~9.5A,   9.5A~10.5A,
  * 10.5A~11.5A, 11.5A~12.5A,  12.5A~13.5A,  13.5A~14.5A,  14.5A~15.5A, 15.5A~16.5A, 16.5A~17.5A, 17.5A~18.5A, 18.5A~19.5A, 19.5A~20.0A
 */
-uint16_t DCM_OUTCurr_Gain[] = {735, 741, 743, 737, 735, 734, 722, 731, 731, 729, 
-                             727, 727, 727, 727, 727, 727, 727, 728, 729, 732};
+uint16_t DCM_OUTCurr_Gain_Default[DCModuleNum][DCM_Gain_Num] = {
+    /*1    2    3    4    5    6    7    8    9    10   11   12   13   14   15   16   17   18   19   20     */
+    {736, 734, 739, 740, 743, 739, 737, 734, 732, 731, 727, 726, 725, 724, 726, 722, 722, 721, 724, 724},                   //DCM1
+    {730, 730, 740, 740, 736, 734, 735, 733, 732, 730, 724, 723, 722, 720, 719, 719, 720, 719, 717, 717},                   //DCM2
+    {735, 741, 743, 737, 735, 729, 729, 731, 729, 719, 723, 712, 721, 716, 718, 717, 708, 717, 717, 717},                   //DCM3
+    {748, 741, 732, 739, 740, 738, 737, 736, 734, 732, 726, 726, 724, 723, 722, 723, 719, 717, 717, 717},                   //DCM4          
+    {735, 736, 741, 742, 741, 738, 740, 736, 734, 733, 728, 727, 726, 725, 725, 722, 721, 720, 717, 717},                   //DCM5          
+}; 
+uint16_t DCM_OUTCurr_Gain_Flash[DCModuleNum][DCM_Gain_Num];
 
-uint8_t DCM_SetCurr_Now_Cnt = 0;
 
 
 
@@ -73,6 +112,10 @@ void dcm_init(void)
     memset(DCM_Fault_PinValue_Cache, 0, sizeof(DCM_Fault_PinValue_Cache));
     memset(DCM_Pdet_PinValue_Cache, 0, sizeof(DCM_Pdet_PinValue_Cache));
     memset(DCM_SetOutCurr_Buffer, 0, sizeof(DCM_SetOutCurr_Buffer));
+
+    /* 从FLASH读取参数：SetCurr_Gain比例系数 和 OutCurr_Gain比例系数 */
+    dcm_read_data_fromFLASH();
+    LOG("have_para_inflash : %d\r\n", have_para_inflash);
 
     /*启动所有模拟输出通道*/
     for (int i = 0; i < DCModuleNum; i++)
@@ -85,7 +128,19 @@ void dcm_init(void)
     /*启动所有ADC通道*/
     for (int i = 0; i < DCModuleNum; i++)
         start_analogin(i);
-    // start_analogin(DCModule_2);
+}
+
+
+void open_dcm_outcurr(uint8_t ch, float curr)
+{
+    dcm_set_outcurrent(ch, curr);
+    dcm_enable_output(ch, 1);
+}
+
+void close_dcm_outcurr(uint8_t ch)
+{
+    dcm_enable_output(ch, 0);
+    dcm_set_outcurrent(ch, 0);
 }
 
 uint8_t dcm_enable_output(uint8_t ch, uint8_t en)
@@ -149,13 +204,14 @@ uint8_t dcm_read_enable_value(uint8_t ch)
 
 /**
  * @brief 设置某一恒流模块的输出电流值
- *
+ * 
  * @param ch 指向第几个恒流模块
  * @param value 电流值 0～20A
  * @return uint8_t 1:表示设置成功
  */
 uint8_t dcm_set_outcurrent(uint8_t ch, float curr)
 {
+    float volt;
     /* 保存设置的输出电流值 */
     DCM_SetOutCurr_Buffer[ch] = curr;
 
@@ -169,13 +225,58 @@ uint8_t dcm_set_outcurrent(uint8_t ch, float curr)
         }
     }
 
-    DCM_SetCurr_Now_Cnt = round(curr) - 1;
+    /* 加上百分比值 */
+    curr = curr * DCM_Adjust_OutCurr_Buffer[ch] / 100;
+    if ((curr > DCM_OUTCurr_Max) || (curr < DCM_OUTCurr_Min))
+    {
+        if (curr != 0)
+        {
+            LOG_error("in dcm_set_outcurrent......dcm_set adjust out curr error !!! channel %d, curr : %f\r\n", ch, curr);
+            DCM_Adjust_Flag[ch] = DCM_Adjust_FromPLC_SetData_Err;
+            return 0;
+        }
+    }
 
-    float volt = curr * DCM_Gain_Multi / DCM_SetCurr_Gain[DCM_SetCurr_Now_Cnt];
+    DCM_SetCurr_Now_Cnt[ch] = round(curr) - 1;
+    
+    if (have_para_inflash == 1)
+    {
+        uint16_t scgdata = DCM_SetCurr_Gain_Flash[ch][DCM_SetCurr_Now_Cnt[ch]];
+        volt = curr * DCM_Gain_Multi / scgdata;     //DCM_SetCurr_Gain_Flash[ch][DCM_SetCurr_Now_Cnt[ch]];
+        //LOG("in'dcm_set_outcurrent', DCM_SetCurr_Gain_Flash[][%d] = %d\r\n", DCM_SetCurr_Now_Cnt[ch], scgdata);
+    }
+    else
+        volt = curr * DCM_Gain_Multi / DCM_SetCurr_Gain_Default[ch][DCM_SetCurr_Now_Cnt[ch]];
 
-    LOG("set curr volt : %f\r\n", volt);
+    Get_SetCurr_Volt[ch] = volt;
+    
     uint32_t data = (uint32_t)(volt * DCM_DAC_MAX * DCM_Vref_Multi / DCM_Vref);
     set_analogout(ch, data);
+    return 1;
+}
+
+/**
+ * @brief 设置某一恒流模块的调整电流值
+ * 
+ * @param ch 指向第几个恒流模块
+ * @param value 调整电流的百分比 50～150， 50 = 50%
+ * @return uint8_t 1:表示设置成功
+ */
+uint8_t dcm_set_adjustcurr(uint8_t ch, uint8_t value)
+{
+    if (value == 0)
+        return 1;
+        
+    /* 输出电流设置超过阀值的话，报错 */
+    if ((value > 150) || (value < 50) || (value < 0))
+    {
+        LOG_error("dcm_set adjust out curr error !!! channel %d, curr : %d\r\n", ch, value);
+        DCM_Adjust_Flag[ch] = DCM_Adjust_FromPLC_SetData_Err;
+        return 0;
+    }
+
+    /* 保存设置的输出电流百分比值 */
+    DCM_Adjust_OutCurr_Buffer[ch] = value;
     return 1;
 }
 
@@ -187,73 +288,53 @@ uint8_t dcm_set_outcurrent(uint8_t ch, float curr)
  */
 float dcm_get_outcurrent(uint8_t ch)
 {
-    float curr, currvolt, currkfp;
+    float curr, currvolt, currvoltkfp;
     uint32_t c_u32;
     switch (ch)
     {
     case DCModule_1:    
-        c_u32 = DCM_AnalogIn_Buffer.DCM1_ANALOGIN[DCM1_OUTCurr];
-        currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-        curr = currvolt * DCM_OUTCurr_Gain[DCM_SetCurr_Now_Cnt] / (float)DCM_Gain_Multi;
-        if ((curr > (DCM_SetOutCurr_Buffer[DCModule_1] + 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))
-            curr = DCM_SetOutCurr_Buffer[DCModule_1] + 0.2;
-        else if ((curr < (DCM_SetOutCurr_Buffer[DCModule_1] - 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))  
-            curr = DCM_SetOutCurr_Buffer[DCModule_1] - 0.2;
-        currkfp = kalmanFilter(&KFP_DCM1, curr);
+        c_u32 = DCM_AnalogIn_Buffer.DCM1_ANALOGIN[DCM1_OUTCurr_Index];
         break;
 
     case DCModule_2:
-        c_u32 = DCM_AnalogIn_Buffer.DCM2_ANALOGIN[DCM2_OUTCurr];
-        currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-        curr = currvolt * DCM_OUTCurr_Gain[DCM_SetCurr_Now_Cnt] / (float)DCM_Gain_Multi;
-        if ((curr > (DCM_SetOutCurr_Buffer[DCModule_2] + 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))
-            curr = DCM_SetOutCurr_Buffer[DCModule_2] + 0.2;
-        else if ((curr < (DCM_SetOutCurr_Buffer[DCModule_2] - 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))  
-            curr = DCM_SetOutCurr_Buffer[DCModule_2] - 0.2;
-        currkfp = kalmanFilter(&KFP_DCM2, curr);
+        c_u32 = DCM_AnalogIn_Buffer.DCM2_ANALOGIN[DCM2_OUTCurr_Index];
         break;
 
     case DCModule_3:
-        c_u32 = DCM_AnalogIn_Buffer.DCM3_ANALOGIN[DCM3_OUTCurr];
-        currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-        curr = currvolt * DCM_OUTCurr_Gain[DCM_SetCurr_Now_Cnt] / (float)DCM_Gain_Multi;
-        if ((curr > (DCM_SetOutCurr_Buffer[DCModule_3] + 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))      //&& (curr < (DCM_SetOutCurr_Buffer[DCModule_3] + 0.8)))
-            curr = DCM_SetOutCurr_Buffer[DCModule_3] + 0.2;
-        else if ((curr < (DCM_SetOutCurr_Buffer[DCModule_3] - 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))    // && (curr > (DCM_SetOutCurr_Buffer[DCModule_3] - 0.8)))
-            curr = DCM_SetOutCurr_Buffer[DCModule_3] - 0.2;
-        currkfp = kalmanFilter(&KFP_DCM3, curr);
+        c_u32 = DCM_AnalogIn_Buffer.DCM3_ANALOGIN[DCM3_OUTCurr_Index];
         break;
 
     case DCModule_4:
-        c_u32 = DCM_AnalogIn_Buffer.DCM4_ANALOGIN[DCM4_OUTCurr];
-        currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-        curr = currvolt * DCM_OUTCurr_Gain[DCM_SetCurr_Now_Cnt] / (float)DCM_Gain_Multi;
-        if ((curr > (DCM_SetOutCurr_Buffer[DCModule_4] + 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))      //(curr < (DCM_SetOutCurr_Buffer[DCModule_4] + 0.6)))
-            curr = DCM_SetOutCurr_Buffer[DCModule_4] + 0.2;
-        else if ((curr < (DCM_SetOutCurr_Buffer[DCModule_4] - 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))  
-            curr = DCM_SetOutCurr_Buffer[DCModule_4] - 0.2;
-        currkfp = kalmanFilter(&KFP_DCM4, curr);
+        c_u32 = DCM_AnalogIn_Buffer.DCM4_ANALOGIN[DCM4_OUTCurr_Index];
         break;
 
     case DCModule_5:
-        c_u32 = DCM_AnalogIn_Buffer.DCM5_ANALOGIN[DCM5_OUTCurr];
-        currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
-        curr = currvolt * DCM_OUTCurr_Gain[DCM_SetCurr_Now_Cnt] / (float)DCM_Gain_Multi;
-        if ((curr > (DCM_SetOutCurr_Buffer[DCModule_5] + 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))
-            curr = DCM_SetOutCurr_Buffer[DCModule_5] + 0.2;
-        else if ((curr < (DCM_SetOutCurr_Buffer[DCModule_5] - 0.2)) && (dcm_read_enable_value(ch) == Enable_DCM))  
-            curr = DCM_SetOutCurr_Buffer[DCModule_5] - 0.2;
-        currkfp = kalmanFilter(&KFP_DCM5, curr);
-        //    LOG("curr volt : %f\r\n", currkfp);
+        c_u32 = DCM_AnalogIn_Buffer.DCM5_ANALOGIN[DCM5_OUTCurr_Index];
         break;
 
     default:
         LOG_error("get outcurrent error!\r\n");
-        return NAN;
+        c_u32 = 0;
     }
     
-
-    return currkfp;
+    currvolt = (float)(c_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
+//    LOG("%0.3f ", currvolt);
+#ifdef USE_KFP
+    currvoltkfp = kalmanFilter(KFP_DCM_Curr_Index(ch), currvolt);
+#else
+    currvoltkfp = currvolt;
+#endif
+//    LOG("%0.3f ", currvoltkfp);
+    Get_OUTCurr_Volt[ch] = currvoltkfp;
+    if (have_para_inflash == 1)
+        curr = currvoltkfp * DCM_OUTCurr_Gain_Flash[ch][DCM_SetCurr_Now_Cnt[ch]] / (float)DCM_Gain_Multi;   //从flash读取的参数
+    else
+        curr = currvoltkfp * DCM_OUTCurr_Gain_Default[ch][DCM_SetCurr_Now_Cnt[ch]] / (float)DCM_Gain_Multi;
+//    LOG("%0.3f ", curr);
+    /* 扣除百分比，再输出给PLC */
+    curr = curr * 100 / DCM_Adjust_OutCurr_Buffer[ch];
+//    LOG("%0.3f \r\n", curr);
+    return curr;
 }
 
 /**
@@ -264,28 +345,28 @@ float dcm_get_outcurrent(uint8_t ch)
  */
 float dcm_get_outvoltage(uint8_t ch)
 {
-    float volt, volt_v, voltkfp;
+    float volt, volt_v;
     uint32_t v_u32;
     switch (ch)
     {
     case DCModule_1:
-        v_u32 = DCM_AnalogIn_Buffer.DCM1_ANALOGIN[DCM1_OUTVolt];
+        v_u32 = DCM_AnalogIn_Buffer.DCM1_ANALOGIN[DCM1_OUTVolt_Index];
         break;
 
     case DCModule_2:
-        v_u32 = DCM_AnalogIn_Buffer.DCM2_ANALOGIN[DCM2_OUTVolt];
+        v_u32 = DCM_AnalogIn_Buffer.DCM2_ANALOGIN[DCM2_OUTVolt_Index];
         break;
 
     case DCModule_3:
-        v_u32 = DCM_AnalogIn_Buffer.DCM3_ANALOGIN[DCM3_OUTVolt];
+        v_u32 = DCM_AnalogIn_Buffer.DCM3_ANALOGIN[DCM3_OUTVolt_Index];
         break;
 
     case DCModule_4:
-        v_u32 = DCM_AnalogIn_Buffer.DCM4_ANALOGIN[DCM4_OUTVolt];
+        v_u32 = DCM_AnalogIn_Buffer.DCM4_ANALOGIN[DCM4_OUTVolt_Index];
         break;
 
     case DCModule_5:
-        v_u32 = DCM_AnalogIn_Buffer.DCM5_ANALOGIN[DCM5_OUTVolt];
+        v_u32 = DCM_AnalogIn_Buffer.DCM5_ANALOGIN[DCM5_OUTVolt_Index];
         break;
 
     default:
@@ -296,12 +377,7 @@ float dcm_get_outvoltage(uint8_t ch)
     volt_v = (float)(v_u32 * DCM_Vref / (float)DCM_Vref_Multi / DCM_DAC_MAX);
     
     volt = volt_v * DCM_OUTVolt_Gain / (float)DCM_Gain_Multi;
-    if (ch == DCModule_1)
-    {
-        LOG("%.3f ", volt_v);
-        voltkfp = kalmanFilter(&KFP_DCMV1, volt_v);
-        LOG("%.3f\r\n", voltkfp);
-    }
+
     return volt;
 }
 
@@ -323,6 +399,15 @@ DCModule_State_t dcm_get_dcmstate(uint8_t ch)
             return DCM_State[ch];
         }
     }
+
+#ifdef USE_AdjustFunc
+    /* 7. 判断是否有校准状态变化 */
+    if (DCM_Adjust_Flag[ch] != 0)
+    {
+        DCM_State[ch] = 10500 + DCM_Adjust_Flag[ch];
+        return DCM_State[ch];
+    }
+#endif
 
     /* 2. 先判断是否有输入电压: 30201 */
     if (dcm_get_pdet(ch) == DCM_No_INVolt)
@@ -358,9 +443,18 @@ DCModule_State_t dcm_get_dcmstate(uint8_t ch)
     }
 #endif
 
+
+
     DCM_State[ch] = DCMState_Work;
     return DCM_State[ch];
 }
+
+#ifdef USE_AdjustFunc
+void dcm_write_adjustflag(uint8_t ch, DCM_Adjust_FromPLC_t dcmadj)
+{
+    DCM_Adjust_Flag[ch] = 10500 + dcmadj;
+}
+#endif
 
 /**
  * @brief 获取某一恒流模块的fault信号
@@ -378,6 +472,7 @@ uint8_t dcm_get_dcmfault(uint8_t ch)
 
     return DCM_Fault_Flag[ch];
 }
+
 #if 1
 uint8_t dcm_read_fault_value(uint8_t ch)
 {
@@ -472,24 +567,23 @@ uint8_t dcm_read_pdet_value(uint8_t ch)
  */
 void start_analogout(uint8_t ch)
 {
-    //    HAL_OPAMP_Start();
     switch (ch)
     {
     case DCModule_1:
-        HAL_DAC_Start(&hdac3, DAC_CHANNEL_1);
-        HAL_OPAMP_Start(&hopamp1);
-        break;
-
-    case DCModule_2:
         HAL_DAC_Start(&hdac1, DAC_CHANNEL_1);
         break;
 
-    case DCModule_3:
+    case DCModule_2:
         HAL_DAC_Start(&hdac1, DAC_CHANNEL_2);
         break;
 
-    case DCModule_4:
+    case DCModule_3:
         HAL_DAC_Start(&hdac2, DAC_CHANNEL_1);
+        break;
+
+    case DCModule_4:
+        HAL_DAC_Start(&hdac3, DAC_CHANNEL_1);
+        HAL_OPAMP_Start(&hopamp1);
         break;
 
     case DCModule_5:
@@ -513,23 +607,25 @@ void stop_analogout(uint8_t ch)
     switch (ch)
     {
     case DCModule_1:
-        HAL_DAC_Stop(&hdac3, DAC_CHANNEL_1);
-        break;
-
-    case DCModule_2:
         HAL_DAC_Stop(&hdac1, DAC_CHANNEL_1);
         break;
 
-    case DCModule_3:
+    case DCModule_2:
         HAL_DAC_Stop(&hdac1, DAC_CHANNEL_2);
         break;
 
-    case DCModule_4:
+    case DCModule_3:
         HAL_DAC_Stop(&hdac2, DAC_CHANNEL_1);
+        break;
+
+    case DCModule_4:
+        HAL_DAC_Stop(&hdac3, DAC_CHANNEL_1);
+        HAL_OPAMP_Stop(&hopamp1);
         break;
 
     case DCModule_5:
         HAL_DAC_Stop(&hdac4, DAC_CHANNEL_1);
+        HAL_OPAMP_Stop(&hopamp4);
         break;
 
     default:
@@ -553,17 +649,17 @@ void set_analogout(uint8_t ch, uint32_t value)
         HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_1, DAC_ALIGN_12B_R, value);
         break;
     case DCModule_2:
-        HAL_DAC_SetValue(&hdac3, DAC_CHANNEL_1, DAC_ALIGN_12B_R, value);
+        HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, value);
         break;
     case DCModule_3:
         //LOG("value 3 : %ld\r\n", value);
-        HAL_DAC_SetValue(&hdac1, DAC_CHANNEL_2, DAC_ALIGN_12B_R, value);
+        HAL_DAC_SetValue(&hdac2, DAC_CHANNEL_1, DAC_ALIGN_12B_R, value);
         break;
     case DCModule_4:
-        HAL_DAC_SetValue(&hdac4, DAC_CHANNEL_1, DAC_ALIGN_12B_R, value);
+        HAL_DAC_SetValue(&hdac3, DAC_CHANNEL_1, DAC_ALIGN_12B_R, value);
         break;
     case DCModule_5:
-        HAL_DAC_SetValue(&hdac2, DAC_CHANNEL_1, DAC_ALIGN_12B_R, value);
+        HAL_DAC_SetValue(&hdac4, DAC_CHANNEL_1, DAC_ALIGN_12B_R, value);
         break;
     default:
         LOG_error("analog out channel error!\r\n");
@@ -573,7 +669,6 @@ void set_analogout(uint8_t ch, uint32_t value)
 
 void start_analogin(uint8_t ch)
 {
-    LOG("start_analogin....%d\r\n", ch);
     switch (ch)
     {
     case DCModule_1:
@@ -676,6 +771,53 @@ void stop_analogin(uint8_t ch)
     }
 }
 
+#ifdef USE_AdjustFunc
+void dcm_read_data_fromFLASH(void)
+{
+    uint8_t ee_use_sf[2];
+    uint16_t ee_use_sf_16;
+
+    /* 读取保存参数的页面中的第1、2字节 */
+    if (ee_read(0, sizeof(ee_use_sf), ee_use_sf) == true)
+    {
+        /* 如果有校准数据在FLASH中，则采用FLASH中的参数 */
+        ee_use_sf_16 = ee_use_sf[0] + (ee_use_sf[1] << 8);
+        if (ee_use_sf_16 == ee_use_StartFrame)
+        {
+            /* 读取校准数据 */
+            uint8_t ee_read_data[500];
+            uint32_t baseaddr = _EE_USE_OUTCurrGain_START_ADDR - _EE_USE_SetCurrGain_START_ADDR;
+            if (ee_read(_EE_USE_SetCurrGain_START_ADDR, sizeof(ee_read_data), ee_read_data) == true)
+            {
+                LOG("in 'dcm_read_data_fromFLASH', [DCM_SetCurr_Gain_Flash , DCM_OUTCurr_Gain_Flash] : ");
+                for (int i = 0; i < DCModuleNum; i++)
+                {
+                    for (int j = 0; j < DCM_Gain_Num; j++)
+                    {
+                        DCM_SetCurr_Gain_Flash[i][j] = word(ee_read_data[i * DCM_Gain_Num * 2 + j * 2 + 1], ee_read_data[i * DCM_Gain_Num * 2 + j * 2]);
+                        if (DCM_SetCurr_Gain_Flash[i][j] >= 1500 || DCM_SetCurr_Gain_Flash[i][j] <= 1000)
+                            DCM_SetCurr_Gain_Flash[i][j] = DCM_SetCurr_Gain_Default[i][j];
+                        
+                        DCM_OUTCurr_Gain_Flash[i][j] = word(ee_read_data[i * DCM_Gain_Num * 2 + j * 2 + 1 + baseaddr], ee_read_data[i * DCM_Gain_Num * 2 + j * 2 + baseaddr]);
+                        if (DCM_OUTCurr_Gain_Flash[i][j] >= 1000 || DCM_OUTCurr_Gain_Flash[i][j] <= 500)
+                            DCM_OUTCurr_Gain_Flash[i][j] = DCM_OUTCurr_Gain_Default[i][j];
+                        
+                        LOG(" [%d,%d] ", DCM_SetCurr_Gain_Flash[i][j], DCM_OUTCurr_Gain_Flash[i][j]);
+                    }
+                }
+                LOG(".......\r\n");
+                have_para_inflash = 1;
+                LOG_info("read data from FLASH success! \r\n");
+                return;
+            }  
+        } 
+    } 
+
+    have_para_inflash = 0;
+}
+#endif
+
+
 /**
  *卡尔曼滤波器
     float LastP;//上次估算协方差 初始化值为0.02
@@ -708,6 +850,38 @@ float kalmanFilter(KFP *kfp, float input)
     return kfp->out;
 }
 #endif
+
+KFP* KFP_DCM_Curr_Index(uint8_t ch)
+{
+    KFP* dcm_kfp;
+    switch(ch)
+    {
+        case DCModule_1:
+            dcm_kfp = &KFP_DCM1;
+            break;
+
+        case DCModule_2:
+            dcm_kfp = &KFP_DCM2;
+            break;
+        
+        case DCModule_3:
+            dcm_kfp = &KFP_DCM3;
+            break;
+
+        case DCModule_4:
+            dcm_kfp = &KFP_DCM4;
+            break;
+
+        case DCModule_5:
+            dcm_kfp = &KFP_DCM5;
+            break;
+        
+        default:
+            dcm_kfp = &KFP_DCM1;
+            LOG_error("KFP_DCM_Curr_Index !\r\n");
+    }
+    return dcm_kfp;
+}
 
 
 /**

@@ -41,6 +41,7 @@ extern "C"
 
 #include "EtherCatPDO.h"
 #include "DCMCtrl.h"
+#include "ee.h"
 #include "BoardConfig.h"
 //#include "BackPanelTrans.h"
 //#include "FrameFormat.h"
